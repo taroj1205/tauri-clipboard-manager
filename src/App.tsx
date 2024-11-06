@@ -1,6 +1,6 @@
-import { createSignal, For, onMount } from "solid-js";
+import { createSignal, For, onCleanup, onMount } from "solid-js";
 import { type ClipboardHistory, getHistory } from "./utils/db";
-import { listen } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 import { getRelativeTime } from "./utils/time";
 import { DocumentIcon, CopyIcon } from "./icons";
 import { cn } from "./utils/tailwind";
@@ -37,8 +37,27 @@ export const App = () => {
       if (inputRef && inputRef.value.length > 0) {
         inputRef.value = "";
         updateHistory();
+      } else if (activeIndex() > 0) {
+        setActiveIndex(0);
+        const activeElement = listRef?.children[0];
+        if (activeElement) {
+          activeElement.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        }
       } else {
         getCurrentWindow().hide();
+      }
+    } else {
+      inputRef?.focus();
+      setActiveIndex(0);
+      const activeElement = listRef?.children[0];
+      if (activeElement) {
+        activeElement.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
       }
     }
 
@@ -94,24 +113,20 @@ export const App = () => {
   };
 
   const handleCopy = async (item: ClipboardHistory) => {
+    emit("copy-from-app");
     if (item.type === "image") {
-      await writeImageBase64(item.image);
+      writeImageBase64(item.image);
     } else {
-      await writeText(item.content);
-    }
-    updateHistory();
-    setActiveIndex(0);
-    const activeElement = listRef?.children[0];
-    if (activeElement) {
-      activeElement.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
+      writeText(item.content);
     }
   };
 
   const handleInput = () => {
     getHistory({ filter: { content: inputRef?.value } }).then((items) => {
+      if (items.length === 0) {
+        setClipboardHistory({});
+        return;
+      }
       const newHistory = items.reduce((acc, item) => {
         const relativeTime = getRelativeTime(new Date(item.date));
         if (!acc[relativeTime]) {
@@ -126,7 +141,6 @@ export const App = () => {
 
   const refreshHistory = () => {
     setOffset(0);
-    setClipboardHistory({});
     getHistory().then((history) => {
       const newHistory = history.reduce((acc, item) => {
         const relativeTime = getRelativeTime(new Date(item.date));
@@ -143,6 +157,7 @@ export const App = () => {
   updateHistory();
 
   listen("clipboard_saved", () => {
+    console.log("clipboard saved");
     refreshHistory();
   });
 
@@ -156,11 +171,12 @@ export const App = () => {
 
   onMount(() => {
     inputRef?.focus();
-    window.addEventListener("keydown", handleKeyDown);
 
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
+    window.addEventListener("keydown", handleKeyDown);
+  });
+
+  onCleanup(() => {
+    window.removeEventListener("keydown", handleKeyDown);
   });
 
   return (
@@ -181,6 +197,11 @@ export const App = () => {
             class="h-full pb-2 overflow-y-auto invisible hover:visible max-h-[calc(100svh-4.5rem)] hover:overflow-y-scroll select-none scroll-area"
           >
             <ul ref={listRef} class="visible w-full">
+              {Object.keys(clipboardHistory()).length === 0 && (
+                <p class="text-lg whitespace-pre overflow-auto p-2">
+                  No content available
+                </p>
+              )}
               <For each={Object.entries(clipboardHistory())}>
                 {([time, items]) => (
                   <>
@@ -225,15 +246,13 @@ export const App = () => {
               </For>
             </ul>
           </div>
-          <div class="border-l border-gray-700" />
-          <div class="w-full h-full mt-2 px-4  overflow-hidden">
-            {Object.values(clipboardHistory()).flat().length === 0 ? (
-              <p class="text-lg whitespace-pre overflow-auto">
-                No content available
-              </p>
-            ) : (
+          {Object.values(clipboardHistory()).flat().length > 0 && (
+            <div class="border-l border-gray-700" />
+          )}
+          <div class="w-full h-full flex flex-col gap-2 mt-2 px-4  overflow-hidden">
+            {Object.values(clipboardHistory()).flat().length > 0 && (
               <>
-                <div class="sticky top-0  grid grid-cols-[1fr_1fr_auto] bg-primary place-items-center">
+                <div class="sticky top-0 grid grid-cols-[1fr_1fr_auto] bg-primary place-items-center">
                   <time class="text-gray-400 text-sm text-left w-full">
                     {new Intl.DateTimeFormat("ja-JP", {
                       year: "numeric",
@@ -244,20 +263,19 @@ export const App = () => {
                       second: "2-digit",
                     }).format(
                       new Date(
-                        Object.values(clipboardHistory()).flat()[
-                          activeIndex()
-                        ].date
+                        Object.values(clipboardHistory()).flat()[activeIndex()]
+                          ?.date || Date.now()
                       )
                     )}
                   </time>
                   <p class="text-gray-400">
                     {/* {Object.values(clipboardHistory()).flat()[activeIndex()]
-                      .windowTitle || "Unknown"}{" "}
+                      ?.windowTitle || "Unknown"}{" "}
                     (
                     {Object.values(clipboardHistory()).flat()[activeIndex()]
-                      .type === "text"
+                      ?.type === "text"
                       ? Object.values(clipboardHistory()).flat()[activeIndex()]
-                          .count
+                          ?.count
                       : null}
                     ) */}
                   </p>
@@ -274,23 +292,23 @@ export const App = () => {
                   </button>
                 </div>
                 {Object.values(clipboardHistory()).flat()[activeIndex()]
-                  .type === "image" ? (
-                  <div class="max-h-[400px] overflow-auto scroll-area">
+                  ?.type === "image" ? (
+                  <div class="max-h-[390px] overflow-auto scroll-area">
                     <img
                       src={`data:image/png;base64,${
                         Object.values(clipboardHistory()).flat()[activeIndex()]
-                          .image
+                          ?.image
                       }`}
                       alt="clipboard content"
-                      class="w-full object-contain"
+                      class="w-full object-contain rounded mt-2"
                     />
                   </div>
                 ) : (
                   <textarea
-                    class="h-full scroll-area w-full max-h-[400px] resize-none bg-primary outline-none"
+                    class="h-full scroll-area w-full max-h-[390px] resize-none bg-primary outline-none"
                     value={
                       Object.values(clipboardHistory()).flat()[activeIndex()]
-                        .content
+                        ?.content || ""
                     }
                   />
                 )}

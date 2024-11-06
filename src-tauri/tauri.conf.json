@@ -13,6 +13,7 @@
     "windows": [
       {
         "title": "tauri-clipboard-manager",
+        "label": "popup",
         "width": 800,
         "height": 500,
         "resizable": false,

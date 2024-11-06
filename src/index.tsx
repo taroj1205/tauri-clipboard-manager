@@ -2,11 +2,8 @@ import { render } from "solid-js/web";
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
-  hasHTML,
   hasImage,
-  hasRTF,
   hasText,
-  hasFiles,
   onClipboardUpdate,
   readText,
   readImageBase64,
@@ -39,7 +36,13 @@ const has = {
   hasFiles: false,
 };
 
+let isCopyingFromApp = false;
+
 const saveClipboard = async () => {
+  if (isCopyingFromApp) {
+    isCopyingFromApp = false;
+    return;
+  }
   const windowTitle = await appWindow.title();
   const windowExe = "unknown";
   const type = has.hasImage ? "image" : has.hasText ? "text" : "unknown";
@@ -60,12 +63,16 @@ if (root) {
       toggleAppWindow();
     });
 
+    listen("copy-from-app", () => {
+      isCopyingFromApp = true;
+    });
+
     onClipboardUpdate(async () => {
-      has.hasHTML = await hasHTML();
+      // has.hasHTML = await hasHTML();
       has.hasImage = await hasImage();
       has.hasText = await hasText();
-      has.hasRTF = await hasRTF();
-      has.hasFiles = await hasFiles();
+      // has.hasRTF = await hasRTF();
+      // has.hasFiles = await hasFiles();
 
       if (has.hasText) {
         await saveClipboard();
