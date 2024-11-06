@@ -39,6 +39,7 @@ const toggleAppWindow = () => {
 
 const monitorClipboard = async () => {
   let previousContent = await readText();
+
   setLastClipboard(previousContent);
 
   const windowTitle = await appWindow.title();

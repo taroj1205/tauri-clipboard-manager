@@ -32,6 +32,7 @@ fn main() {
     builder
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_clipboard::init())
         .setup(|app| {
             #[cfg(desktop)]
             {

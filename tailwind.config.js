@@ -1,3 +1,9 @@
+const {
+  scrollbarGutter,
+  scrollbarWidth,
+  scrollbarColor,
+} = require("tailwind-scrollbar-utilities");
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
@@ -11,5 +17,5 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [scrollbarGutter(), scrollbarWidth(), scrollbarColor()],
 };

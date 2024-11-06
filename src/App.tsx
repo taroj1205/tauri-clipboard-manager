@@ -59,7 +59,7 @@ export const App = () => {
 
   const updateHistory = (offset = 0, limit = 20) => {
     console.log("Updating history");
-    getHistory(offset, limit).then((history) => {
+    getHistory({ offset, limit }).then((history) => {
       const newHistory = history.reduce((acc, item) => {
         const relativeTime = getRelativeTime(new Date(item.date));
         if (!acc[relativeTime]) {
@@ -85,6 +85,20 @@ export const App = () => {
     updateHistory();
   };
 
+  const handleInput = () => {
+    getHistory({ filter: { content: inputRef?.value } }).then((items) => {
+      const newHistory = items.reduce((acc, item) => {
+        const relativeTime = getRelativeTime(new Date(item.date));
+        if (!acc[relativeTime]) {
+          acc[relativeTime] = [];
+        }
+        acc[relativeTime].push(item);
+        return acc;
+      }, {} as Record<string, ClipboardHistory[]>);
+      setClipboardHistory(newHistory);
+    });
+  };
+
   updateHistory();
 
   listen("clipboard_updated", () => {
@@ -97,48 +111,60 @@ export const App = () => {
         <input
           ref={inputRef}
           onkeydown={handleKeyDown}
+          onInput={handleInput}
           type="text"
           class="p-2 mb-2 w-full bg-transparent outline-none text-white"
           placeholder="Type here..."
         />
         <div class="border-b border-gray-700 " />
-        <div class="grid grid-cols-[1fr_auto_2fr] gap-4 h-full">
+        <div class="grid grid-cols-[1fr_auto_2fr] h-full">
           <div
             ref={scrollAreaRef}
             onScroll={handleScroll}
-            class="h-full pb-2 overflow-y-auto invisible hover:visible max-h-[calc(100vh-4rem)] hover:overflow-y-scroll select-none"
+            class="h-full pb-2 overflow-y-auto invisible hover:visible max-h-[calc(100vh-4rem)] hover:overflow-y-scroll select-none scroll-area"
           >
-            <ul ref={listRef} class="visible">
-              <For each={Object.values(clipboardHistory()).flat()}>
-                {(item, index) => (
-                  <li
-                    class={cn(
-                      "cursor-pointer grid grid-cols-[auto_1fr] gap-2 p-2 h-10 rounded truncate overflow-hidden place-items-center",
-                      {
-                        "bg-active": index() === activeIndex(),
-                      }
-                    )}
-                    onMouseUp={() => {
-                      handleCopy(item.content);
-                    }}
-                  >
-                    <DocumentIcon />
-                    <p class="w-full">{item.content.trim().split("\n")[0]}</p>
-                  </li>
+            <ul ref={listRef} class="visible w-full">
+              <For each={Object.entries(clipboardHistory())}>
+                {([time, items]) => (
+                  <>
+                    <li class="text-gray-400 text-sm p-2">{time}</li>
+                    <For each={items}>
+                      {(item, index) => (
+                        <li class="w-full">
+                          <button
+                            type="button"
+                            onDblClick={() => handleCopy(item.content)}
+                            onClick={() => setActiveIndex(index())}
+                            class={cn(
+                              "cursor-pointer w-full grid grid-cols-[auto_1fr] gap-2 p-2 h-10 rounded truncate overflow-hidden place-items-center",
+                              {
+                                "bg-active": index() === activeIndex(),
+                              }
+                            )}
+                          >
+                            <DocumentIcon />
+                            <p class="w-full overflow-hidden text-left text-ellipsis">
+                              {item.content.trim().split("\n")[0]}
+                            </p>
+                          </button>
+                        </li>
+                      )}
+                    </For>
+                  </>
                 )}
               </For>
             </ul>
           </div>
           <div class="border-l border-gray-700" />
-          <div class="w-full h-full mt-2 pr-2 overflow-hidden">
+          <div class="w-full h-full mt-2 px-4  overflow-hidden">
             {Object.values(clipboardHistory()).flat().length === 0 ? (
               <p class="text-lg whitespace-pre overflow-auto">
                 No content available
               </p>
             ) : (
               <>
-                <div class="sticky top-0 py-2 grid grid-cols-[1fr_1fr_auto] bg-primary">
-                  <time class="text-gray-400">
+                <div class="sticky top-0  grid grid-cols-[1fr_1fr_auto] bg-primary place-items-center">
+                  <time class="text-gray-400 text-sm text-left w-full">
                     {getRelativeTime(
                       new Date(
                         Object.values(clipboardHistory()).flat()[
@@ -170,14 +196,13 @@ export const App = () => {
                     <DocumentIcon />
                   </button>
                 </div>
-                <div class="overflow-auto h-full invisible hover:visible max-h-[calc(100vh-7rem)] max-w-full">
-                  <p class="text-lg whitespace-pre visible">
-                    {
-                      Object.values(clipboardHistory()).flat()[activeIndex()]
-                        .content
-                    }
-                  </p>
-                </div>
+                <textarea
+                  class="h-full scroll-area w-full max-h-[calc(100%-2rem)] resize-none bg-primary outline-none"
+                  value={
+                    Object.values(clipboardHistory()).flat()[activeIndex()]
+                      .content
+                  }
+                />
               </>
             )}
           </div>
