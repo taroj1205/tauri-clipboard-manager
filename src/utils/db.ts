@@ -6,6 +6,8 @@ export const initializeDatabase = async () => {
   db = await Database.load("sqlite:clipboard.db");
 };
 
+initializeDatabase();
+
 export const saveClipboardToDB = async (
   content: string,
   windowTitle: string,
@@ -78,6 +80,11 @@ export const getHistory = async ({
   if (filter?.content) {
     whereClauses.push("content LIKE ?");
     params.push(`%${filter.content}%`);
+  }
+
+  if (filter?.windowTitle) {
+    whereClauses.push("window_title LIKE ?");
+    params.push(`%${filter.windowTitle}%`);
   }
 
   if (whereClauses.length > 0) {
