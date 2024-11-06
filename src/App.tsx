@@ -1,11 +1,11 @@
 import { createSignal, For } from "solid-js";
 import { type ClipboardHistory, getHistory } from "./utils/db";
 import { listen } from "@tauri-apps/api/event";
-import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { getRelativeTime } from "./utils/time";
 import { DocumentIcon, CopyIcon } from "./icons";
 import { cn } from "./utils/tailwind";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { writeImageBase64, writeText } from "tauri-plugin-clipboard-api";
 
 export const App = () => {
   const [activeIndex, setActiveIndex] = createSignal(0);
@@ -94,18 +94,11 @@ export const App = () => {
 
   const handleCopy = async (content: string, type: string) => {
     if (type === "image") {
-      const response = await fetch(content);
-      const blob = await response.blob();
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        await writeText(reader.result as string);
-        updateHistory();
-      };
-      reader.readAsDataURL(blob);
+      await writeImageBase64(content);
     } else {
       await writeText(content);
-      updateHistory();
     }
+    updateHistory();
   };
 
   const handleInput = () => {
@@ -189,7 +182,7 @@ export const App = () => {
                             <DocumentIcon />
                             {item.type === "image" ? (
                               <img
-                                src={`data:image/png;base64,${item.content}`}
+                                src={`data:image/png;base64,${item.image}`}
                                 alt="clipboard content"
                                 class="h-full w-full object-contain"
                               />
@@ -262,7 +255,7 @@ export const App = () => {
                   <img
                     src={`data:image/png;base64,${
                       Object.values(clipboardHistory()).flat()[activeIndex()]
-                        .content
+                        .image
                     }`}
                     alt="clipboard content"
                     class="h-full w-full object-contain"

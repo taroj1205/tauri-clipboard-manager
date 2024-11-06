@@ -93,24 +93,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "775a8770d29db3dadcb858482cc240af7b2ffde4ac4de67d1d4955728103f0e2"
 
 [[package]]
-name = "arboard"
-version = "3.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df099ccb16cd014ff054ac1bf392c67feeef57164b05c42f037cd40f5d4357f4"
-dependencies = [
- "clipboard-win",
- "core-graphics 0.23.2",
- "image",
- "log",
- "objc2",
- "objc2-app-kit",
- "objc2-foundation",
- "parking_lot",
- "windows-sys 0.48.0",
- "x11rb",
-]
-
-[[package]]
 name = "arg_enum_proc_macro"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -657,8 +639,8 @@ dependencies = [
  "bitflags 2.6.0",
  "block",
  "cocoa-foundation",
- "core-foundation 0.10.0",
- "core-graphics 0.24.0",
+ "core-foundation",
+ "core-graphics",
  "foreign-types",
  "libc",
  "objc",
@@ -672,8 +654,8 @@ checksum = "e14045fb83be07b5acf1c0884b2180461635b433455fa35d1cd6f17f1450679d"
 dependencies = [
  "bitflags 2.6.0",
  "block",
- "core-foundation 0.10.0",
- "core-graphics-types 0.2.0",
+ "core-foundation",
+ "core-graphics-types",
  "libc",
  "objc",
 ]
@@ -717,16 +699,6 @@ checksum = "6245d59a3e82a7fc217c5828a6692dbc6dfb63a0c8c90495621f7b9d79704a0e"
 
 [[package]]
 name = "core-foundation"
-version = "0.9.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "91e195e091a93c46f7102ec7818a2aa394e1e1771c3ab4825963fa03e45afb8f"
-dependencies = [
- "core-foundation-sys",
- "libc",
-]
-
-[[package]]
-name = "core-foundation"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b55271e5c8c478ad3f38ad24ef34923091e0548492a266d19b3c0b4d82574c63"
@@ -743,38 +715,14 @@ checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
 
 [[package]]
 name = "core-graphics"
-version = "0.23.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c07782be35f9e1140080c6b96f0d44b739e2278479f64e02fdab4e32dfd8b081"
-dependencies = [
- "bitflags 1.3.2",
- "core-foundation 0.9.4",
- "core-graphics-types 0.1.3",
- "foreign-types",
- "libc",
-]
-
-[[package]]
-name = "core-graphics"
 version = "0.24.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fa95a34622365fa5bbf40b20b75dba8dfa8c94c734aea8ac9a5ca38af14316f1"
 dependencies = [
  "bitflags 2.6.0",
- "core-foundation 0.10.0",
- "core-graphics-types 0.2.0",
+ "core-foundation",
+ "core-graphics-types",
  "foreign-types",
- "libc",
-]
-
-[[package]]
-name = "core-graphics-types"
-version = "0.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "45390e6114f68f718cc7a830514a96f903cccd70d02a8f6d9f643ac4ba45afaf"
-dependencies = [
- "bitflags 1.3.2",
- "core-foundation 0.9.4",
  "libc",
 ]
 
@@ -785,7 +733,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d44a101f213f6c4cdc1853d4b78aef6db6bdfa3468798cc1d9912f4735013eb"
 dependencies = [
  "bitflags 2.6.0",
- "core-foundation 0.10.0",
+ "core-foundation",
  "libc",
 ]
 
@@ -4071,7 +4019,7 @@ checksum = "18051cdd562e792cad055119e0cdb2cfc137e44e3987532e0f9659a77931bb08"
 dependencies = [
  "bytemuck",
  "cfg_aliases",
- "core-graphics 0.24.0",
+ "core-graphics",
  "foreign-types",
  "js-sys",
  "log",
@@ -4462,8 +4410,8 @@ checksum = "63f1f6b2017cc33d7f6fc9c6186a2c0f5dfc985899a7b4fe9e64985c17533db3"
 dependencies = [
  "bitflags 2.6.0",
  "cocoa",
- "core-foundation 0.10.0",
- "core-graphics 0.24.0",
+ "core-foundation",
+ "core-graphics",
  "crossbeam-channel",
  "dispatch",
  "dlopen2",
@@ -4591,7 +4539,6 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-clipboard",
- "tauri-plugin-clipboard-manager",
  "tauri-plugin-global-shortcut",
  "tauri-plugin-shell",
  "tauri-plugin-single-instance",
@@ -4666,22 +4613,6 @@ dependencies = [
  "clipboard-rs",
  "image",
  "serde",
- "tauri",
- "tauri-plugin",
- "thiserror",
-]
-
-[[package]]
-name = "tauri-plugin-clipboard-manager"
-version = "2.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "78b7d556886c15849198c0948fd7f4c880492f0461539176da0a8a70272e2904"
-dependencies = [
- "arboard",
- "image",
- "log",
- "serde",
- "serde_json",
  "tauri",
  "tauri-plugin",
  "thiserror",
@@ -5097,7 +5028,7 @@ version = "0.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c92af36a182b46206723bdf8a7942e20838cde1cf062e5b97854d57eb01763b"
 dependencies = [
- "core-graphics 0.24.0",
+ "core-graphics",
  "crossbeam-channel",
  "dirs",
  "libappindicator",

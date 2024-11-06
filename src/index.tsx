@@ -43,8 +43,15 @@ const saveClipboard = async () => {
   const windowTitle = await appWindow.title();
   const windowExe = "unknown";
   const type = has.hasImage ? "image" : has.hasText ? "text" : "unknown";
-  const content = type === "text" ? await readText() : await readImageBase64();
-  await saveClipboardToDB(content, windowTitle, windowExe, type);
+
+  if (type === "image") {
+    const image = await readImageBase64();
+    const content = "";
+    await saveClipboardToDB(content, windowTitle, windowExe, type, image);
+  } else {
+    const content = type === "text" ? await readText() : "";
+    await saveClipboardToDB(content, windowTitle, windowExe, type);
+  }
 };
 
 if (root) {

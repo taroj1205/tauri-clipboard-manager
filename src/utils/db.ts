@@ -12,12 +12,13 @@ export const saveClipboardToDB = async (
   content: string,
   windowTitle: string,
   windowExe: string,
-  type: string
+  type: string,
+  image = ""
 ) => {
   const date = new Date().toISOString();
   await db.execute(
-    "INSERT INTO clipboard (content, date, window_title, window_exe, type) VALUES (?, ?, ?, ?, ?)",
-    [content, date, windowTitle, windowExe, type]
+    "INSERT INTO clipboard (content, date, window_title, window_exe, type, image) VALUES (?, ?, ?, ?, ?, ?)",
+    [content, date, windowTitle, windowExe, type, image]
   );
 };
 
@@ -28,6 +29,7 @@ export interface ClipboardHistory {
   windowExe: string;
   type: string;
   count: number;
+  image: string;
 }
 
 export const getHistory = async ({
@@ -47,7 +49,7 @@ export const getHistory = async ({
   sort?: { column: keyof ClipboardHistory; order: "ASC" | "DESC" };
 } = {}): Promise<ClipboardHistory[]> => {
   let query = `
-    SELECT content, MAX(date) as date, window_title as windowTitle, window_exe as windowExe, type, COUNT(*) as count
+    SELECT content, MAX(date) as date, window_title as windowTitle, window_exe as windowExe, type, image, COUNT(*) as count
     FROM clipboard
   `;
 
@@ -79,7 +81,7 @@ export const getHistory = async ({
   }
 
   query += `
-    GROUP BY content, window_title, window_exe, type
+    GROUP BY content, window_title, window_exe, type, image
   `;
 
   if (sort) {
