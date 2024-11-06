@@ -6,6 +6,8 @@ use tauri::Manager;
 mod db;
 use db::MIGRATION;
 
+mod api;
+
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command(rename_all = "snake_case")]
 fn message(message: String) {
@@ -40,13 +42,14 @@ fn main() {
                 use tauri::Emitter;
                 use tauri_plugin_global_shortcut::{Code, Modifiers, ShortcutState};
 
+                let _ = api::clipboard::start_monitor(app.handle().clone());
+
                 app.handle().plugin(
                     tauri_plugin_global_shortcut::Builder::new()
                         .with_shortcuts(["alt+v"])? // Added "alt+v" shortcut
                         .with_handler(|app, shortcut, event| {
                             if event.state == ShortcutState::Pressed {
                                 if shortcut.matches(Modifiers::ALT, Code::KeyV) {
-                                    println!("Alt+V triggered");
                                     // Handle "alt+v" shortcut
                                     let _ = app.emit("shortcut-event", "Alt+V triggered");
                                     // Emit an event to open the popup
@@ -59,6 +62,14 @@ fn main() {
             }
 
             Ok(())
+        })
+        .on_window_event(|_app, _event| {
+            #[cfg(not(dev))]
+            if let tauri::WindowEvent::Focused(false) = event {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.hide();
+                }
+            }
         })
         .invoke_handler(tauri::generate_handler![message])
         .run(tauri::generate_context!())

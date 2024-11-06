@@ -25,6 +25,9 @@
     "clipboard-manager:allow-write-image",
     "clipboard-manager:allow-write-text",
     "sql:default",
-    "sql:allow-execute"
+    "sql:allow-execute",
+    "clipboard:read-all",
+    "clipboard:write-all",
+    "clipboard:allow-read-text"
   ]
 }

@@ -1,73 +1,50 @@
 import { render } from "solid-js/web";
-import { createSignal, onCleanup } from "solid-js";
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { readText } from "@tauri-apps/plugin-clipboard-manager";
+import {
+  hasHTML,
+  hasImage,
+  hasRTF,
+  hasText,
+  hasFiles,
+  onClipboardUpdate,
+  readText,
+  readImageBase64,
+} from "tauri-plugin-clipboard-api";
 import { saveClipboardToDB } from "./utils/db";
 import "./styles.css";
 import { App } from "./App";
 
 const root = document.getElementById("root");
 
-const [showPopup, setShowPopup] = createSignal(false);
-const [lastClipboard, setLastClipboard] = createSignal("");
-
 const appWindow = getCurrentWindow();
 
-const showAppWindow = () => {
-  appWindow.show();
-  appWindow.center();
-  appWindow.setFocus();
-  setShowPopup(true);
-};
-
-const hideAppWindow = () => {
-  appWindow.hide();
-  setShowPopup(false);
-};
-
 const toggleAppWindow = () => {
-  setShowPopup((prev) => {
-    if (prev) {
-      hideAppWindow();
+  appWindow.isVisible().then((visible) => {
+    if (visible) {
+      appWindow.hide();
     } else {
-      showAppWindow();
+      appWindow.show();
+      appWindow.setFocus();
+      emit("app_window_shown");
     }
-    return !prev;
   });
 };
 
-const monitorClipboard = async () => {
-  let previousContent = await readText();
-
-  setLastClipboard(previousContent);
-
-  const windowTitle = await appWindow.title();
-  const windowExe = "unknown";
-  await saveClipboardToDB(previousContent, windowTitle, windowExe, "text");
-
-  const interval = setInterval(async () => {
-    try {
-      const currentContent = await readText();
-      if (
-        currentContent !== previousContent &&
-        currentContent !== lastClipboard()
-      ) {
-        previousContent = currentContent;
-        setLastClipboard(currentContent);
-        await saveClipboardToDB(currentContent, windowTitle, windowExe, "text");
-        emit("clipboard_updated", { content: currentContent });
-      }
-    } catch (e) {}
-  }, 1000);
-
-  onCleanup(() => clearInterval(interval));
+const has = {
+  hasHTML: false,
+  hasImage: false,
+  hasText: false,
+  hasRTF: false,
+  hasFiles: false,
 };
 
-const onBlur = () => {
-  if (showPopup()) {
-    hideAppWindow();
-  }
+const saveClipboard = async () => {
+  const windowTitle = await appWindow.title();
+  const windowExe = "unknown";
+  const type = has.hasImage ? "image" : has.hasText ? "text" : "unknown";
+  const content = type === "text" ? await readText() : await readImageBase64();
+  await saveClipboardToDB(content, windowTitle, windowExe, type);
 };
 
 if (root) {
@@ -76,12 +53,19 @@ if (root) {
       toggleAppWindow();
     });
 
-    monitorClipboard();
+    onClipboardUpdate(async () => {
+      has.hasHTML = await hasHTML();
+      has.hasImage = await hasImage();
+      has.hasText = await hasText();
+      has.hasRTF = await hasRTF();
+      has.hasFiles = await hasFiles();
 
-    appWindow.onFocusChanged((focus) => {
-      if (!focus.payload) {
-        onBlur();
+      if (has.hasText) {
+        await saveClipboard();
+      } else if (has.hasImage) {
+        await saveClipboard();
       }
+      emit("clipboard_saved");
     });
 
     return <App />;

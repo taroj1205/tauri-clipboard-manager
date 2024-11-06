@@ -1,6 +1,12 @@
 import Database from "@tauri-apps/plugin-sql";
 
-const db = await Database.load("sqlite:clipboard.db");
+let db: Database;
+
+const initializeDatabase = async () => {
+  db = await Database.load("sqlite:clipboard.db");
+};
+
+initializeDatabase();
 
 export const saveClipboardToDB = async (
   content: string,
