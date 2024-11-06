@@ -4,13 +4,16 @@
 
 
 html {
-  @apply bg-primary h-[500px] overflow-clip;
+  @apply bg-primary;
 }
 
 body {
   font-family: 'Inter', sans-serif;
 }
 
+#root {
+  @apply max-h-svh h-full flex flex-col;
+}
 
 .scroll-area::-webkit-scrollbar {
   width: 12px;

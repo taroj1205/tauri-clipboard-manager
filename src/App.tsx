@@ -1,4 +1,4 @@
-import { createSignal, For } from "solid-js";
+import { createSignal, For, onMount } from "solid-js";
 import { type ClipboardHistory, getHistory } from "./utils/db";
 import { listen } from "@tauri-apps/api/event";
 import { getRelativeTime } from "./utils/time";
@@ -6,6 +6,7 @@ import { DocumentIcon, CopyIcon } from "./icons";
 import { cn } from "./utils/tailwind";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { writeImageBase64, writeText } from "tauri-plugin-clipboard-api";
+import { ImageIcon } from "./icons/image";
 
 export const App = () => {
   const [activeIndex, setActiveIndex] = createSignal(0);
@@ -100,6 +101,13 @@ export const App = () => {
     }
     updateHistory();
     setActiveIndex(0);
+    const activeElement = listRef?.children[0];
+    if (activeElement) {
+      activeElement.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
   };
 
   const handleInput = () => {
@@ -142,12 +150,24 @@ export const App = () => {
     inputRef?.focus();
   });
 
+  const handleClick = (index: number) => {
+    setActiveIndex(index);
+  };
+
+  onMount(() => {
+    inputRef?.focus();
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  });
+
   return (
-    <main class="w-full h-screen text-gray-300">
-      <div class="flex flex-col h-screen p-2">
+    <main class="w-full text-gray-300 p-2 max-h-[calc(100svh-1rem)] ">
+      <div class="flex flex-col">
         <input
           ref={inputRef}
-          onkeydown={handleKeyDown}
           onInput={handleInput}
           type="text"
           class="p-2 mb-2 w-full bg-transparent outline-none text-white"
@@ -158,7 +178,7 @@ export const App = () => {
           <div
             ref={scrollAreaRef}
             onScroll={handleScroll}
-            class="h-full pb-2 overflow-y-auto invisible hover:visible max-h-[calc(100vh-4rem)] hover:overflow-y-scroll select-none scroll-area"
+            class="h-full pb-2 overflow-y-auto invisible hover:visible max-h-[calc(100svh-4.5rem)] hover:overflow-y-scroll select-none scroll-area"
           >
             <ul ref={listRef} class="visible w-full">
               <For each={Object.entries(clipboardHistory())}>
@@ -171,7 +191,7 @@ export const App = () => {
                           <button
                             type="button"
                             onDblClick={() => handleCopy(item)}
-                            onClick={() => setActiveIndex(index())}
+                            onClick={() => handleClick(index())}
                             class={cn(
                               "cursor-pointer w-full grid grid-cols-[auto_1fr] gap-2 p-2 h-10 rounded truncate overflow-hidden place-items-center",
                               {
@@ -179,17 +199,22 @@ export const App = () => {
                               }
                             )}
                           >
-                            <DocumentIcon />
                             {item.type === "image" ? (
-                              <img
-                                src={`data:image/png;base64,${item.image}`}
-                                alt="clipboard content"
-                                class="h-full w-full object-contain"
-                              />
+                              <>
+                                <ImageIcon class="size-4" />
+                                <img
+                                  src={`data:image/png;base64,${item.image}`}
+                                  alt="clipboard content"
+                                  class="h-full w-full object-cover overflow-hidden"
+                                />
+                              </>
                             ) : (
-                              <p class="w-full overflow-hidden text-left text-ellipsis">
-                                {item.content.trim().split("\n")[0]}
-                              </p>
+                              <>
+                                <DocumentIcon class="size-4" />
+                                <p class="w-full overflow-hidden text-left text-ellipsis">
+                                  {item.content.trim().split("\n")[0]}
+                                </p>
+                              </>
                             )}
                           </button>
                         </li>
@@ -226,14 +251,15 @@ export const App = () => {
                     )}
                   </time>
                   <p class="text-gray-400">
-                    {Object.values(clipboardHistory()).flat()[activeIndex()]
+                    {/* {Object.values(clipboardHistory()).flat()[activeIndex()]
                       .windowTitle || "Unknown"}{" "}
                     (
-                    {
-                      Object.values(clipboardHistory()).flat()[activeIndex()]
-                        .count
-                    }
-                    )
+                    {Object.values(clipboardHistory()).flat()[activeIndex()]
+                      .type === "text"
+                      ? Object.values(clipboardHistory()).flat()[activeIndex()]
+                          .count
+                      : null}
+                    ) */}
                   </p>
                   <button
                     type="button"
@@ -249,17 +275,19 @@ export const App = () => {
                 </div>
                 {Object.values(clipboardHistory()).flat()[activeIndex()]
                   .type === "image" ? (
-                  <img
-                    src={`data:image/png;base64,${
-                      Object.values(clipboardHistory()).flat()[activeIndex()]
-                        .image
-                    }`}
-                    alt="clipboard content"
-                    class="h-full w-full object-contain"
-                  />
+                  <div class="max-h-[400px] overflow-auto scroll-area">
+                    <img
+                      src={`data:image/png;base64,${
+                        Object.values(clipboardHistory()).flat()[activeIndex()]
+                          .image
+                      }`}
+                      alt="clipboard content"
+                      class="w-full object-contain"
+                    />
+                  </div>
                 ) : (
                   <textarea
-                    class="h-full scroll-area w-full max-h-[calc(100%-2rem)] resize-none bg-primary outline-none"
+                    class="h-full scroll-area w-full max-h-[400px] resize-none bg-primary outline-none"
                     value={
                       Object.values(clipboardHistory()).flat()[activeIndex()]
                         .content
