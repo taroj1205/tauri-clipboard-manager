@@ -11,13 +11,15 @@ import {
   readText,
   readImageBase64,
 } from "tauri-plugin-clipboard-api";
-import { saveClipboardToDB } from "./utils/db";
+import { initializeDatabase, saveClipboardToDB } from "./utils/db";
 import "./styles.css";
 import { App } from "./App";
 
 const root = document.getElementById("root");
 
 const appWindow = getCurrentWindow();
+
+initializeDatabase();
 
 const toggleAppWindow = () => {
   appWindow.isVisible().then((visible) => {

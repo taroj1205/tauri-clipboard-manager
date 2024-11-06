@@ -2,11 +2,9 @@ import Database from "@tauri-apps/plugin-sql";
 
 let db: Database;
 
-const initializeDatabase = async () => {
+export const initializeDatabase = async () => {
   db = await Database.load("sqlite:clipboard.db");
 };
-
-initializeDatabase();
 
 export const saveClipboardToDB = async (
   content: string,
@@ -15,6 +13,9 @@ export const saveClipboardToDB = async (
   type: string,
   image = ""
 ) => {
+  if (!db) {
+    await initializeDatabase();
+  }
   const date = new Date().toISOString();
   await db.execute(
     "INSERT INTO clipboard (content, date, window_title, window_exe, type, image) VALUES (?, ?, ?, ?, ?, ?)",
@@ -48,6 +49,9 @@ export const getHistory = async ({
   };
   sort?: { column: keyof ClipboardHistory; order: "ASC" | "DESC" };
 } = {}): Promise<ClipboardHistory[]> => {
+  if (!db) {
+    await initializeDatabase();
+  }
   let query = `
     SELECT content, MAX(date) as date, window_title as windowTitle, window_exe as windowExe, type, image, COUNT(*) as count
     FROM clipboard

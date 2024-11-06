@@ -30,7 +30,7 @@ export const App = () => {
     } else if (event.key === "Enter") {
       const item =
         clipboardHistory()[Object.keys(clipboardHistory())[0]][activeIndex()];
-      handleCopy(item.content, item.type);
+      handleCopy(item);
       getCurrentWindow().hide();
     } else if (event.key === "Escape") {
       if (inputRef && inputRef.value.length > 0) {
@@ -92,13 +92,14 @@ export const App = () => {
     });
   };
 
-  const handleCopy = async (content: string, type: string) => {
-    if (type === "image") {
-      await writeImageBase64(content);
+  const handleCopy = async (item: ClipboardHistory) => {
+    if (item.type === "image") {
+      await writeImageBase64(item.image);
     } else {
-      await writeText(content);
+      await writeText(item.content);
     }
     updateHistory();
+    setActiveIndex(0);
   };
 
   const handleInput = () => {
@@ -117,6 +118,7 @@ export const App = () => {
 
   const refreshHistory = () => {
     setOffset(0);
+    setClipboardHistory({});
     getHistory().then((history) => {
       const newHistory = history.reduce((acc, item) => {
         const relativeTime = getRelativeTime(new Date(item.date));
@@ -168,9 +170,7 @@ export const App = () => {
                         <li class="w-full">
                           <button
                             type="button"
-                            onDblClick={() =>
-                              handleCopy(item.content, item.type)
-                            }
+                            onDblClick={() => handleCopy(item)}
                             onClick={() => setActiveIndex(index())}
                             class={cn(
                               "cursor-pointer w-full grid grid-cols-[auto_1fr] gap-2 p-2 h-10 rounded truncate overflow-hidden place-items-center",
@@ -241,9 +241,6 @@ export const App = () => {
                     onClick={() => {
                       handleCopy(
                         Object.values(clipboardHistory()).flat()[activeIndex()]
-                          .content,
-                        Object.values(clipboardHistory()).flat()[activeIndex()]
-                          .type
                       );
                     }}
                   >

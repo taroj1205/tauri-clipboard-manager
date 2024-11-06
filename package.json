@@ -21,8 +21,7 @@
     "overlayscrollbars-solid": "^0.5.5",
     "solid-js": "^1.7.8",
     "tailwind-merge": "^2.5.4",
-    "tauri-plugin-clipboard-api": "^2.1.11",
-    "tesseract.js": "^5.1.1"
+    "tauri-plugin-clipboard-api": "^2.1.11"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2",
