@@ -51,14 +51,6 @@ export const App = () => {
       }
     } else {
       inputRef?.focus();
-      setActiveIndex(0);
-      const activeElement = listRef?.children[0];
-      if (activeElement) {
-        activeElement.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-      }
     }
 
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -91,25 +83,27 @@ export const App = () => {
   };
 
   const updateHistory = (offset = 0, limit = 20) => {
-    getHistory({ offset, limit }).then((history) => {
-      const newHistory = history.reduce((acc, item) => {
-        const relativeTime = getRelativeTime(new Date(item.date));
-        if (!acc[relativeTime]) {
-          acc[relativeTime] = [];
-        }
-        acc[relativeTime].push(item);
-        return acc;
-      }, {} as Record<string, ClipboardHistory[]>);
-      setClipboardHistory((prev) => ({
-        ...prev,
-        ...Object.fromEntries(
-          Object.entries(newHistory).map(([key, value]) => [
-            key,
-            [...(prev[key] || []), ...value],
-          ])
-        ),
-      }));
-    });
+    getHistory({ offset, limit, filter: { content: inputRef?.value } }).then(
+      (history) => {
+        const newHistory = history.reduce((acc, item) => {
+          const relativeTime = getRelativeTime(new Date(item.date));
+          if (!acc[relativeTime]) {
+            acc[relativeTime] = [];
+          }
+          acc[relativeTime].push(item);
+          return acc;
+        }, {} as Record<string, ClipboardHistory[]>);
+        setClipboardHistory((prev) => ({
+          ...prev,
+          ...Object.fromEntries(
+            Object.entries(newHistory).map(([key, value]) => [
+              key,
+              [...(prev[key] || []), ...value],
+            ])
+          ),
+        }));
+      }
+    );
   };
 
   const handleCopy = async (item: ClipboardHistory) => {
@@ -122,6 +116,14 @@ export const App = () => {
   };
 
   const handleInput = () => {
+    setActiveIndex(0);
+    const activeElement = listRef?.children[0];
+    if (activeElement) {
+      activeElement.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
     getHistory({ filter: { content: inputRef?.value } }).then((items) => {
       if (items.length === 0) {
         setClipboardHistory({});

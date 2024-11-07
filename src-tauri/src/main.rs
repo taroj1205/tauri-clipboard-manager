@@ -4,7 +4,7 @@
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Manager,
+    AppHandle, Manager,
 };
 
 mod db;
@@ -16,6 +16,16 @@ mod api;
 #[tauri::command(rename_all = "snake_case")]
 fn message(message: String) {
     println!("{}", message);
+}
+fn toggle_app_window(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window("popup") {
+        if window.is_visible().unwrap_or(false) {
+            let _ = window.hide();
+        } else {
+            let _ = window.show();
+            let _ = window.set_focus();
+        }
+    }
 }
 
 fn main() {
@@ -42,7 +52,6 @@ fn main() {
             #[cfg(desktop)]
             {
                 // use tauri::Manager;
-                use tauri::Emitter;
                 use tauri_plugin_global_shortcut::{Code, Modifiers, ShortcutState};
 
                 let _ = api::clipboard::start_monitor(app.handle().clone());
@@ -53,10 +62,7 @@ fn main() {
                         .with_handler(|app, shortcut, event| {
                             if event.state == ShortcutState::Pressed {
                                 if shortcut.matches(Modifiers::ALT, Code::KeyV) {
-                                    // Handle "alt+v" shortcut
-                                    let _ = app.emit("shortcut-event", "Alt+V triggered");
-                                    // Emit an event to open the popup
-                                    let _ = app.emit("toggle-popup", ());
+                                    toggle_app_window(app);
                                 }
                             }
                         })
@@ -82,7 +88,7 @@ fn main() {
                     } => {
                         // in this example, let's show and focus the main window when the tray is clicked
                         let app = tray.app_handle();
-                        if let Some(window) = app.get_webview_window("main") {
+                        if let Some(window) = app.get_webview_window("popup") {
                             let _ = window.show();
                             let _ = window.set_focus();
                         }
@@ -96,9 +102,9 @@ fn main() {
             Ok(())
         })
         .on_window_event(|app, event| {
-            #[cfg(not(dev))]
+            // #[cfg(not(dev))]
             if let tauri::WindowEvent::Focused(false) = event {
-                if let Some(window) = app.get_webview_window("main") {
+                if let Some(window) = app.get_webview_window("popup") {
                     let _ = window.hide();
                 }
             }

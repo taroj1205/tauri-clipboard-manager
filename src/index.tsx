@@ -16,18 +16,6 @@ const root = document.getElementById("root");
 
 const appWindow = getCurrentWindow();
 
-const toggleAppWindow = () => {
-  appWindow.isVisible().then((visible) => {
-    if (visible) {
-      appWindow.hide();
-    } else {
-      appWindow.show();
-      appWindow.setFocus();
-      emit("app_window_shown");
-    }
-  });
-};
-
 const has = {
   hasHTML: false,
   hasImage: false,
@@ -59,10 +47,6 @@ const saveClipboard = async () => {
 
 if (root) {
   render(() => {
-    listen("toggle-popup", () => {
-      toggleAppWindow();
-    });
-
     listen("copy-from-app", () => {
       isCopyingFromApp = true;
     });
