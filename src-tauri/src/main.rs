@@ -41,8 +41,8 @@ fn main() {
     {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             let _ = app
-                .get_webview_window("main")
-                .expect("no main window")
+                .get_webview_window("popup")
+                .expect("no popup window")
                 .set_focus();
         }));
     }
@@ -98,6 +98,7 @@ fn main() {
                 })
                 .menu(&menu)
                 .menu_on_left_click(true)
+                .icon(app.default_window_icon().unwrap().clone())
                 .build(app)?;
 
             Ok(())

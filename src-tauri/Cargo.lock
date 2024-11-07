@@ -3,6 +3,25 @@
 version = 3
 
 [[package]]
+name = "Clippr"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "image",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-clipboard",
+ "tauri-plugin-global-shortcut",
+ "tauri-plugin-shell",
+ "tauri-plugin-single-instance",
+ "tauri-plugin-sql",
+ "win_ocr",
+]
+
+[[package]]
 name = "addr2line"
 version = "0.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4554,25 +4573,6 @@ dependencies = [
  "tauri-winres",
  "toml 0.8.2",
  "walkdir",
-]
-
-[[package]]
-name = "tauri-clipboard-manager"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "image",
- "rusqlite",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-clipboard",
- "tauri-plugin-global-shortcut",
- "tauri-plugin-shell",
- "tauri-plugin-single-instance",
- "tauri-plugin-sql",
- "win_ocr",
 ]
 
 [[package]]

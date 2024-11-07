@@ -1,5 +1,5 @@
 [package]
-name = "tauri-clipboard-manager"
+name = "Clippr"
 version = "0.1.0"
 description = "Advanced clipboard manager built with Tauri"
 authors = ["Shintaro Jokagi"]
