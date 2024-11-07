@@ -17,6 +17,7 @@ mod api;
 fn message(message: String) {
     println!("{}", message);
 }
+
 fn toggle_app_window(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("popup") {
         if window.is_visible().unwrap_or(false) {
@@ -109,7 +110,10 @@ fn main() {
                 }
             }
         })
-        .invoke_handler(tauri::generate_handler![message])
+        .invoke_handler(tauri::generate_handler![
+            message,
+            api::image::extract_text_from_base64
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

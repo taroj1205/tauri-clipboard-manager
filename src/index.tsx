@@ -25,6 +25,7 @@ const has = {
 };
 
 let isCopyingFromApp = false;
+let saved = false;
 
 const saveClipboard = async () => {
   if (isCopyingFromApp) {
@@ -35,14 +36,17 @@ const saveClipboard = async () => {
   const windowExe = "unknown";
   const type = has.hasImage ? "image" : has.hasText ? "text" : "unknown";
 
+  console.log(type);
+
   if (type === "image") {
     const image = await readImageBase64();
-    const content = "";
-    await saveClipboardToDB(content, windowTitle, windowExe, type, image);
+    saveClipboardToDB("", windowTitle, windowExe, type, image);
   } else {
     const content = type === "text" ? await readText() : "";
-    await saveClipboardToDB(content, windowTitle, windowExe, type);
+    saveClipboardToDB(content, windowTitle, windowExe, type);
   }
+
+  saved = true;
 };
 
 if (root) {
@@ -52,17 +56,10 @@ if (root) {
     });
 
     onClipboardUpdate(async () => {
-      // has.hasHTML = await hasHTML();
       has.hasImage = await hasImage();
       has.hasText = await hasText();
-      // has.hasRTF = await hasRTF();
-      // has.hasFiles = await hasFiles();
 
-      if (has.hasText) {
-        await saveClipboard();
-      } else if (has.hasImage) {
-        await saveClipboard();
-      }
+      if (!saved) await saveClipboard();
       emit("clipboard_saved");
     });
 

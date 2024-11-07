@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import Database from "@tauri-apps/plugin-sql";
 
 let db: Database;
@@ -23,6 +24,27 @@ export const saveClipboardToDB = async (
     "INSERT INTO clipboard (content, date, window_title, window_exe, type, image) VALUES (?, ?, ?, ?, ?, ?)",
     [content, date, windowTitle, windowExe, type, image]
   );
+  const result = await db.select<{ id: number }[]>(
+    "SELECT last_insert_rowid() as id"
+  );
+  const id = result[0].id;
+
+  if (type === "image")
+    invoke("extract_text_from_base64", { base64Str: image }).then(
+      (extractedText) => {
+        updateClipboardInDB(id, extractedText as string);
+      }
+    );
+};
+
+export const updateClipboardInDB = async (
+  id: number,
+  extractedText: string
+) => {
+  await db.execute("UPDATE clipboard SET content = ? WHERE id = ?", [
+    extractedText,
+    id,
+  ]);
 };
 
 export interface ClipboardHistory {
@@ -91,9 +113,11 @@ export const getHistory = async ({
     query += ` WHERE ${whereClauses.join(" AND ")}`;
   }
 
-  query += `
-    GROUP BY content, window_title, window_exe, type, image
-  `;
+  if (filter?.type === "image") {
+    query += " GROUP BY image";
+  } else {
+    query += " GROUP BY content, window_title, window_exe, type, image";
+  }
 
   if (sort) {
     query += ` ORDER BY ${sort.column} ${sort.order}`;
