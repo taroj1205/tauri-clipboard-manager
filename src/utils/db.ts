@@ -100,20 +100,26 @@ export const getHistory = async ({
   }
 
   if (filter?.content) {
-    whereClauses.push("content LIKE ?");
-    params.push(`%${filter.content}%`);
-  }
-
-  if (filter?.windowTitle) {
-    whereClauses.push("window_title LIKE ?");
-    params.push(`%${filter.windowTitle}%`);
+    if (filter.content.startsWith("img:")) {
+      whereClauses.push("type = 'image'");
+      const contentWords = filter.content.slice(4).trim().split(" ");
+      const contentClauses = contentWords.map(() => "content LIKE ?");
+      whereClauses.push(`(${contentClauses.join(" OR ")})`);
+      params.push(...contentWords.map((word) => `%${word}%`));
+    } else if (filter.content.startsWith("t:")) {
+      whereClauses.push("type = 'text'");
+      const contentWords = filter.content.slice(2).trim().split(" ");
+      const contentClauses = contentWords.map(() => "content LIKE ?");
+      whereClauses.push(`(${contentClauses.join(" OR ")})`);
+      params.push(...contentWords.map((word) => `%${word}%`));
+    }
   }
 
   if (whereClauses.length > 0) {
     query += ` WHERE ${whereClauses.join(" AND ")}`;
   }
 
-  if (filter?.type === "image") {
+  if (filter?.type === "image" || filter?.content?.startsWith("img:")) {
     query += " GROUP BY image";
   } else {
     query += " GROUP BY content, window_title, window_exe, type, image";
@@ -121,6 +127,10 @@ export const getHistory = async ({
 
   if (sort) {
     query += ` ORDER BY ${sort.column} ${sort.order}`;
+  } else if (filter?.content) {
+    query +=
+      " ORDER BY (CASE WHEN content LIKE ? THEN 1 ELSE 0 END) DESC, MAX(date) DESC";
+    params.push(`%${filter.content}%`);
   } else {
     query += " ORDER BY MAX(date) DESC";
   }
