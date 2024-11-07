@@ -1,4 +1,5 @@
 import { render } from "solid-js/web";
+import { createSignal } from "solid-js";
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
@@ -16,25 +17,24 @@ const root = document.getElementById("root");
 
 const appWindow = getCurrentWindow();
 
-const has = {
-  hasHTML: false,
-  hasImage: false,
-  hasText: false,
-  hasRTF: false,
-  hasFiles: false,
-};
+const [hasImageSignal, setHasImageSignal] = createSignal(false);
+const [hasTextSignal, setHasTextSignal] = createSignal(false);
 
-let isCopyingFromApp = false;
-let saved = false;
+const [isCopyingFromApp, setIsCopyingFromApp] = createSignal(false);
+createSignal(false);
 
 const saveClipboard = async () => {
-  if (isCopyingFromApp) {
-    isCopyingFromApp = false;
+  if (isCopyingFromApp()) {
+    setIsCopyingFromApp(false);
     return;
   }
   const windowTitle = await appWindow.title();
   const windowExe = "unknown";
-  const type = has.hasImage ? "image" : has.hasText ? "text" : "unknown";
+  const type = hasImageSignal()
+    ? "image"
+    : hasTextSignal()
+    ? "text"
+    : "unknown";
 
   console.log(type);
 
@@ -45,21 +45,19 @@ const saveClipboard = async () => {
     const content = type === "text" ? await readText() : "";
     saveClipboardToDB(content, windowTitle, windowExe, type);
   }
-
-  saved = true;
 };
 
 if (root) {
   render(() => {
     listen("copy-from-app", () => {
-      isCopyingFromApp = true;
+      setIsCopyingFromApp(true);
     });
 
     onClipboardUpdate(async () => {
-      has.hasImage = await hasImage();
-      has.hasText = await hasText();
+      setHasImageSignal(await hasImage());
+      setHasTextSignal(await hasText());
 
-      if (!saved) await saveClipboard();
+      await saveClipboard();
       emit("clipboard_saved");
     });
 
