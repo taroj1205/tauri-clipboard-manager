@@ -182,8 +182,8 @@ export const App = () => {
   });
 
   return (
-    <main class="w-full text-gray-300 p-2 max-h-[calc(100svh-1rem)] ">
-      <div class="flex flex-col">
+    <main class="w-full text-gray-300 p-2 h-[calc(100svh-1rem)] max-h-[calc(100svh-1rem)] ">
+      <div class="flex flex-col h-full">
         <input
           ref={inputRef}
           onInput={handleInput}
@@ -249,7 +249,7 @@ export const App = () => {
             </ul>
           </div>
           {Object.values(clipboardHistory()).flat().length > 0 && (
-            <div class="border-l border-gray-700" />
+            <div class="border-l border-gray-700 h-full" />
           )}
           <div class="w-full h-full flex flex-col gap-2 mt-2 px-4  overflow-hidden">
             {Object.values(clipboardHistory()).flat().length > 0 && (
