@@ -196,7 +196,7 @@ export const App = () => {
           <div
             ref={scrollAreaRef}
             onScroll={handleScroll}
-            class="h-full pb-2 overflow-y-auto invisible hover:visible max-h-[calc(100svh-4.5rem)] hover:overflow-y-scroll select-none scroll-area"
+            class="h-full pb-2 overflow-y-auto invisible hover:visible max-h-[calc(100svh-4.5rem)] hover:overflow-y-auto select-none scroll-area"
           >
             <ul ref={listRef} class="visible w-full">
               {Object.keys(clipboardHistory()).length === 0 && (

@@ -112,6 +112,11 @@ export const getHistory = async ({
       const contentClauses = contentWords.map(() => "content LIKE ?");
       whereClauses.push(`(${contentClauses.join(" OR ")})`);
       params.push(...contentWords.map((word) => `%${word}%`));
+    } else {
+      const contentWords = filter.content.trim().split(" ");
+      const contentClauses = contentWords.map(() => "content LIKE ?");
+      whereClauses.push(`(${contentClauses.join(" OR ")})`);
+      params.push(...contentWords.map((word) => `%${word}%`));
     }
   }
 
