@@ -13,6 +13,7 @@ import "./styles.css";
 import { App } from "./App";
 import { invoke } from "@tauri-apps/api/core";
 import { appConfigDir } from "@tauri-apps/api/path";
+// import { writeFile, BaseDirectory } from "@tauri-apps/plugin-fs";
 import { path } from "@tauri-apps/api";
 
 let db_path = "";
@@ -49,13 +50,22 @@ const saveClipboard = async () => {
 
   if (type === "image") {
     const image = await readImageBase64();
+    // const path = new Date().toISOString().replace(/:/g, "-");
+    // const file = await writeFile(
+    //   `images/${path}`,
+    //   new Uint8Array(Buffer.from(image, "base64")),
+    //   {
+    //     baseDir: BaseDirectory.AppData,
+    //   }
+    // );
+    // console.log(file);
     await invoke("save_clipboard_to_db", {
       db_path,
       content: "",
       window_title: windowTitle,
       window_exe: windowExe,
-      type_: type,
-      image: image,
+      type,
+      image,
     });
   } else {
     const content = type === "text" ? await readText() : "";
@@ -64,7 +74,7 @@ const saveClipboard = async () => {
       content,
       window_title: windowTitle,
       window_exe: windowExe,
-      type_: type,
+      type,
       image: null,
     });
   }

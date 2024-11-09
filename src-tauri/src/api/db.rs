@@ -2,6 +2,8 @@ use chrono::Utc;
 use rusqlite::{params, Connection, Result};
 use serde::{Deserialize, Serialize};
 
+use super::image::extract_text_from_base64;
+
 #[derive(Serialize, Deserialize)]
 pub struct ClipboardHistory {
     content: String,
@@ -56,7 +58,7 @@ pub async fn save_clipboard_to_db(
     type_: String,
     image: Option<String>,
 ) -> Result<i64, String> {
-    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+    let conn = Connection::open(db_path.clone()).map_err(|e| e.to_string())?;
     let date = Utc::now().to_rfc3339();
     conn.execute(
         "INSERT INTO clipboard (content, date, window_title, window_exe, type, image) VALUES (?, ?, ?, ?, ?, ?)",
@@ -66,10 +68,16 @@ pub async fn save_clipboard_to_db(
             window_title,
             window_exe,
             type_,
-            image.unwrap_or_default()
+            image.clone().unwrap_or_default()
         ],
     ).map_err(|e| e.to_string())?;
     let id = conn.last_insert_rowid();
+
+    if type_ == "image" {
+        let base64_str = image.unwrap_or_default();
+        let text = extract_text_from_base64(base64_str).await?;
+        update_clipboard_in_db(db_path, id, text).await?;
+    }
     Ok(id)
 }
 
@@ -98,7 +106,7 @@ pub async fn get_history(
 ) -> Result<Vec<ClipboardHistory>, String> {
     let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
     let mut query = String::from(
-        "SELECT content, MAX(date) as date, window_title, window_exe, type, image, COUNT(*) as count FROM clipboard",
+        "SELECT id, content, MAX(date) as date, window_title, window_exe, type, image, COUNT(*) as count FROM clipboard",
     );
     let mut conditions = Vec::new();
     let mut params_vec: Vec<String> = Vec::new();
@@ -127,7 +135,7 @@ pub async fn get_history(
         query.push_str(&conditions.join(" AND "));
     }
 
-    query.push_str(" GROUP BY content, window_title, window_exe, type, image");
+    query.push_str(" GROUP BY id, content, window_title, window_exe, type, image");
 
     if let Some(s) = sort {
         query.push_str(&format!(" ORDER BY {} {}", s.column, s.order));
@@ -148,13 +156,13 @@ pub async fn get_history(
     let history_iter = stmt
         .query_map(params.as_slice(), |row| {
             Ok(ClipboardHistory {
-                content: row.get(0)?,
-                date: row.get(1)?,
-                window_title: row.get(2)?,
-                window_exe: row.get(3)?,
-                type_: row.get(4)?,
-                image: row.get(5)?,
-                count: row.get(6)?,
+                content: row.get(1)?,
+                date: row.get(2)?,
+                window_title: row.get(3)?,
+                window_exe: row.get(4)?,
+                type_: row.get(5)?,
+                image: row.get(6)?,
+                count: row.get(7)?,
             })
         })
         .map_err(|e| e.to_string())?;
@@ -166,4 +174,12 @@ pub async fn get_history(
     }
 
     Ok(history)
+}
+
+#[tauri::command(rename_all = "snake_case")]
+pub async fn delete_clipboard_from_db(db_path: String, id: i64) -> Result<(), String> {
+    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+    conn.execute("DELETE FROM clipboard WHERE id = ?", params![id])
+        .map_err(|e| e.to_string())?;
+    Ok(())
 }

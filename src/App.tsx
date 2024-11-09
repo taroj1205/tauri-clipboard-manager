@@ -7,13 +7,15 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { writeImageBase64, writeText } from "tauri-plugin-clipboard-api";
 import { ImageIcon } from "./icons/image";
 import { invoke } from "@tauri-apps/api/core";
+import { ContextMenu } from "./components/context-menu";
 
 type ClipboardHistory = {
+  id: number;
   content: string;
   date: string;
   window_title: string;
   window_exe: string;
-  type_: string;
+  type: string;
   count: number;
   image: string;
 };
@@ -50,6 +52,37 @@ export const App = ({ db_path }: { db_path: string }) => {
   let listRef: HTMLUListElement | undefined;
   let scrollAreaRef: HTMLDivElement | undefined;
 
+  const [contextMenu, setContextMenu] = createSignal<{
+    show: boolean;
+    x: number;
+    y: number;
+    item: ClipboardHistory | null;
+  }>({
+    show: false,
+    x: 0,
+    y: 0,
+    item: null,
+  });
+
+  const handleContextMenu = (e: MouseEvent, item: ClipboardHistory) => {
+    e.preventDefault();
+    setContextMenu({
+      show: true,
+      x: e.clientX,
+      y: e.clientY,
+      item,
+    });
+  };
+
+  const closeContextMenu = () => {
+    setContextMenu({
+      show: false,
+      x: 0,
+      y: 0,
+      item: null,
+    });
+  };
+
   const handleKeyDown = (event: KeyboardEvent) => {
     const list = listRef?.children;
     const totalLength = list?.length ?? 0;
@@ -80,6 +113,7 @@ export const App = ({ db_path }: { db_path: string }) => {
     }
 
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
       list?.[activeIndex()]?.scrollIntoView({
         behavior: "smooth",
         block: "center",
@@ -110,11 +144,16 @@ export const App = ({ db_path }: { db_path: string }) => {
 
   const handleCopy = async (item: ClipboardHistory) => {
     emit("copy-from-app");
-    if (item.type_ === "image") {
+    if (item.type === "image") {
       writeImageBase64(item.image);
     } else {
       writeText(item.content);
     }
+  };
+
+  const handleDelete = async (item: ClipboardHistory) => {
+    await invoke<void>("delete_clipboard_from_db", { db_path, id: item.id });
+    refreshHistory();
   };
 
   const handleInput = () => {
@@ -175,12 +214,27 @@ export const App = ({ db_path }: { db_path: string }) => {
     setActiveIndex(index);
   };
 
+  const handleRightPanelContextMenu = (e: MouseEvent) => {
+    e.preventDefault();
+    const item = Object.values(clipboardHistory()).flat()[activeIndex()];
+    if (item) {
+      setContextMenu({
+        show: true,
+        x: e.clientX,
+        y: e.clientY,
+        item,
+      });
+    }
+  };
+
   onMount(() => {
     window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("click", closeContextMenu);
   });
 
   onCleanup(() => {
     window.removeEventListener("keydown", handleKeyDown);
+    window.removeEventListener("click", closeContextMenu);
   });
 
   return (
@@ -226,6 +280,7 @@ export const App = ({ db_path }: { db_path: string }) => {
                           type="button"
                           onDblClick={() => handleCopy(item)}
                           onClick={() => handleClick(index())}
+                          onContextMenu={(e) => handleContextMenu(e, item)}
                           class={cn(
                             "cursor-pointer w-full grid grid-cols-[auto_1fr] gap-2 p-2 h-10 rounded truncate overflow-hidden place-items-center",
                             {
@@ -233,7 +288,7 @@ export const App = ({ db_path }: { db_path: string }) => {
                             }
                           )}
                         >
-                          {item.type_ === "image" ? (
+                          {item.type === "image" ? (
                             <>
                               <ImageIcon class="size-4" />
                               <img
@@ -264,7 +319,10 @@ export const App = ({ db_path }: { db_path: string }) => {
           {Object.values(clipboardHistory()).flat().length > 0 && (
             <div class="border-l border-gray-700 h-full" />
           )}
-          <div class="w-full h-full flex flex-col gap-2 mt-2 px-4  overflow-hidden">
+          <div
+            class="w-full h-full flex flex-col gap-2 mt-2 px-4 overflow-hidden"
+            onContextMenu={handleRightPanelContextMenu}
+          >
             {Object.values(clipboardHistory()).flat().length > 0 && (
               <>
                 <div class="sticky top-0 grid grid-cols-[1fr_1fr_auto] bg-primary place-items-center">
@@ -307,7 +365,7 @@ export const App = ({ db_path }: { db_path: string }) => {
                   </button>
                 </div>
                 {Object.values(clipboardHistory()).flat()[activeIndex()]
-                  ?.type_ === "image" ? (
+                  ?.type === "image" ? (
                   <div class="max-h-[390px] overflow-auto scroll-area">
                     <img
                       src={`data:image/png;base64,${
@@ -332,6 +390,20 @@ export const App = ({ db_path }: { db_path: string }) => {
           </div>
         </div>
       </div>
+      <ContextMenu
+        show={contextMenu().show}
+        x={contextMenu().x}
+        y={contextMenu().y}
+        onDelete={() => {
+          const item = contextMenu().item;
+          if (item) handleDelete(item);
+        }}
+        onCopy={() => {
+          const item = contextMenu().item;
+          if (item) handleCopy(item);
+        }}
+        onClose={closeContextMenu}
+      />
     </main>
   );
 };

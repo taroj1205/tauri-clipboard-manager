@@ -32,11 +32,13 @@ fn toggle_app_window(app: &AppHandle) {
 fn main() {
     let migrations = vec![MIGRATION];
 
-    let mut builder = tauri::Builder::default().plugin(
-        tauri_plugin_sql::Builder::default()
-            .add_migrations("sqlite:clipboard.db", migrations)
-            .build(),
-    );
+    let mut builder = tauri::Builder::default()
+        .plugin(tauri_plugin_fs::init())
+        .plugin(
+            tauri_plugin_sql::Builder::default()
+                .add_migrations("sqlite:clipboard.db", migrations)
+                .build(),
+        );
     #[cfg(desktop)]
     {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
@@ -118,6 +120,7 @@ fn main() {
             api::db::save_clipboard_to_db,
             api::db::update_clipboard_in_db,
             api::db::get_history,
+            api::db::delete_clipboard_from_db
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
