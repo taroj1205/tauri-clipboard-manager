@@ -51,10 +51,15 @@ export const App = ({ db_path }: { db_path: string }) => {
   let scrollAreaRef: HTMLDivElement | undefined;
 
   const handleKeyDown = (event: KeyboardEvent) => {
-    const totalLength = clipboardHistory().length;
-    if (event.key === "ArrowDown" && totalLength > 0) {
+    const list = listRef?.children;
+    const totalLength = list?.length ?? 0;
+    if (event.key === "ArrowDown") {
       setActiveIndex((prev) => Math.min(prev + 1, totalLength - 1));
-    } else if (event.key === "ArrowUp" && totalLength > 0) {
+      if (activeIndex() >= totalLength - 5) {
+        setOffset((prev) => prev + limit);
+        updateHistory(offset(), limit);
+      }
+    } else if (event.key === "ArrowUp") {
       setActiveIndex((prev) => Math.max(prev - 1, 0));
     } else if (event.key === "Enter") {
       const item = clipboardHistory()[activeIndex()];
@@ -66,13 +71,7 @@ export const App = ({ db_path }: { db_path: string }) => {
         updateHistory();
       } else if (activeIndex() > 0) {
         setActiveIndex(0);
-        const activeElement = listRef?.children[0];
-        if (activeElement) {
-          activeElement.scrollIntoView({
-            behavior: "smooth",
-            block: "center",
-          });
-        }
+        list?.[0]?.scrollIntoView({ behavior: "smooth", block: "center" });
       } else {
         getCurrentWindow().hide();
       }
@@ -81,25 +80,17 @@ export const App = ({ db_path }: { db_path: string }) => {
     }
 
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-      const activeElement = listRef?.children[activeIndex()];
-      if (activeElement) {
-        activeElement.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-      }
-      const totalLength = clipboardHistory().length;
-      if (activeIndex() >= totalLength - 5) {
-        setOffset((prev) => prev + limit);
-        updateHistory(offset(), limit);
-      }
+      list?.[activeIndex()]?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
     }
   };
 
   const handleScroll = () => {
     if (scrollAreaRef) {
       const { scrollTop, scrollHeight, clientHeight } = scrollAreaRef;
-      if (scrollTop + clientHeight >= scrollHeight - 5) {
+      if (scrollTop + clientHeight >= scrollHeight) {
         setOffset((prev) => prev + limit);
         updateHistory(offset(), limit);
       }
@@ -159,8 +150,25 @@ export const App = ({ db_path }: { db_path: string }) => {
     refreshHistory();
   });
 
-  listen("app_window_shown", () => {
-    inputRef?.focus();
+  const focusInput = () => {
+    if (inputRef) {
+      inputRef.focus();
+    }
+  };
+
+  const blurInput = () => {
+    if (inputRef) {
+      inputRef.blur();
+    }
+  };
+
+  listen("tauri://focus", () => {
+    focusInput();
+  });
+
+  listen("tauri://blur", () => {
+    console.log("blur");
+    blurInput();
   });
 
   const handleClick = (index: number) => {
@@ -168,8 +176,6 @@ export const App = ({ db_path }: { db_path: string }) => {
   };
 
   onMount(() => {
-    inputRef?.focus();
-
     window.addEventListener("keydown", handleKeyDown);
   });
 

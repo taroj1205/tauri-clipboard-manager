@@ -37,7 +37,7 @@ const saveClipboard = async () => {
     setIsCopyingFromApp(false);
     return;
   }
-  const windowTitle = await appWindow.title();
+  const windowTitle = (await appWindow.title()) || "unknown";
   const windowExe = "unknown";
   const type = hasImageSignal()
     ? "image"
@@ -52,8 +52,8 @@ const saveClipboard = async () => {
     await invoke("save_clipboard_to_db", {
       db_path,
       content: "",
-      windowTitle,
-      windowExe,
+      window_title: windowTitle,
+      window_exe: windowExe,
       type_: type,
       image: image,
     });
@@ -62,8 +62,8 @@ const saveClipboard = async () => {
     await invoke("save_clipboard_to_db", {
       db_path,
       content,
-      windowTitle,
-      windowExe,
+      window_title: windowTitle,
+      window_exe: windowExe,
       type_: type,
       image: null,
     });
