@@ -1,5 +1,4 @@
 import { createSignal, For, onCleanup, onMount } from "solid-js";
-import { type ClipboardHistory, getHistory } from "./utils/db";
 import { emit, listen } from "@tauri-apps/api/event";
 import { getRelativeTime } from "./utils/time";
 import { DocumentIcon, CopyIcon } from "./icons";
@@ -7,8 +6,19 @@ import { cn } from "./utils/tailwind";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { writeImageBase64, writeText } from "tauri-plugin-clipboard-api";
 import { ImageIcon } from "./icons/image";
+import { invoke } from "@tauri-apps/api/core";
 
-export const App = () => {
+type ClipboardHistory = {
+  content: string;
+  date: string;
+  window_title: string;
+  window_exe: string;
+  type_: string;
+  count: number;
+  image: string;
+};
+
+export const App = ({ db_path }: { db_path: string }) => {
   const [activeIndex, setActiveIndex] = createSignal(0);
   const [clipboardHistory, setClipboardHistory] = createSignal<
     Record<string, ClipboardHistory[]>
@@ -83,32 +93,35 @@ export const App = () => {
   };
 
   const updateHistory = (offset = 0, limit = 20) => {
-    getHistory({ offset, limit, filter: { content: inputRef?.value } }).then(
-      (history) => {
-        const newHistory = history.reduce((acc, item) => {
-          const relativeTime = getRelativeTime(new Date(item.date));
-          if (!acc[relativeTime]) {
-            acc[relativeTime] = [];
-          }
-          acc[relativeTime].push(item);
-          return acc;
-        }, {} as Record<string, ClipboardHistory[]>);
-        setClipboardHistory((prev) => ({
-          ...prev,
-          ...Object.fromEntries(
-            Object.entries(newHistory).map(([key, value]) => [
-              key,
-              [...(prev[key] || []), ...value],
-            ])
-          ),
-        }));
-      }
-    );
+    invoke<ClipboardHistory[]>("get_history", {
+      db_path,
+      offset,
+      limit,
+      filter: { content: inputRef?.value },
+    }).then((history) => {
+      const newHistory = history.reduce((acc, item) => {
+        const relativeTime = getRelativeTime(new Date(item.date));
+        if (!acc[relativeTime]) {
+          acc[relativeTime] = [];
+        }
+        acc[relativeTime].push(item);
+        return acc;
+      }, {} as Record<string, ClipboardHistory[]>);
+      setClipboardHistory((prev) => ({
+        ...prev,
+        ...Object.fromEntries(
+          Object.entries(newHistory).map(([key, value]) => [
+            key,
+            [...(prev[key] || []), ...value],
+          ])
+        ),
+      }));
+    });
   };
 
   const handleCopy = async (item: ClipboardHistory) => {
     emit("copy-from-app");
-    if (item.type === "image") {
+    if (item.type_ === "image") {
       writeImageBase64(item.image);
     } else {
       writeText(item.content);
@@ -124,7 +137,10 @@ export const App = () => {
         block: "center",
       });
     }
-    getHistory({ filter: { content: inputRef?.value } }).then((items) => {
+    invoke<ClipboardHistory[]>("get_history", {
+      db_path,
+      filter: { content: inputRef?.value },
+    }).then((items) => {
       if (items.length === 0) {
         setClipboardHistory({});
         return;
@@ -143,7 +159,9 @@ export const App = () => {
 
   const refreshHistory = () => {
     setOffset(0);
-    getHistory().then((history) => {
+    invoke<ClipboardHistory[]>("get_history", {
+      db_path,
+    }).then((history) => {
       const newHistory = history.reduce((acc, item) => {
         const relativeTime = getRelativeTime(new Date(item.date));
         if (!acc[relativeTime]) {
@@ -222,7 +240,7 @@ export const App = () => {
                               }
                             )}
                           >
-                            {item.type === "image" ? (
+                            {item.type_ === "image" ? (
                               <>
                                 <ImageIcon class="size-4" />
                                 <img
@@ -294,7 +312,7 @@ export const App = () => {
                   </button>
                 </div>
                 {Object.values(clipboardHistory()).flat()[activeIndex()]
-                  ?.type === "image" ? (
+                  ?.type_ === "image" ? (
                   <div class="max-h-[390px] overflow-auto scroll-area">
                     <img
                       src={`data:image/png;base64,${

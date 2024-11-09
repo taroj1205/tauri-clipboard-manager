@@ -113,7 +113,11 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             message,
-            api::image::extract_text_from_base64
+            api::image::extract_text_from_base64,
+            api::db::initialize_database,
+            api::db::save_clipboard_to_db,
+            api::db::update_clipboard_in_db,
+            api::db::get_history,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
