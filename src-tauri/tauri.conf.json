@@ -1,7 +1,9 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Clippr",
-  "version": "0.1.2",
+  "package": {
+    "productName": "Clippr",
+    "version": "0.1.0"
+  },
   "identifier": "com.clippr.app",
   "build": {
     "beforeDevCommand": "pnpm dev",
