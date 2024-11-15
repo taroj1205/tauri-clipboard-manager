@@ -166,9 +166,22 @@ export const App = ({ db_path }: { db_path: string }) => {
 
   updateHistory();
 
-  listen("clipboard_saved", () => {
+  listen("clipboard_saved", async () => {
     console.log("clipboard saved");
-    refreshHistory();
+    // Get the latest history in background
+    const newHistory = await invoke<ClipboardHistory[]>("get_history", {
+      db_path,
+      offset: 0,
+      limit: 20,
+    });
+
+    // Compare with current history
+    const currentHistory = clipboardHistory().slice(0, 20);
+    
+    // Only update if there are differences
+    if (JSON.stringify(newHistory) !== JSON.stringify(currentHistory)) {
+      setClipboardHistory(newHistory);
+    }
   });
 
   const focusInput = () => {
