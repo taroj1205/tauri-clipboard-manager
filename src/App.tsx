@@ -235,11 +235,11 @@ export const App = ({ db_path }: { db_path: string }) => {
   });
 
   return (
-    <main class="w-full text-gray-300 p-2 h-[calc(100svh-1rem)] max-h-[calc(100svh-1rem)]">
-      <div class="flex flex-col h-full max-w-[800px] mx-auto">
+    <main className="w-full text-gray-300 p-2 h-[calc(100svh-1rem)] max-h-[calc(100svh-1rem)]">
+      <div className="flex flex-col h-full max-w-[800px] mx-auto">
         <SearchInput ref={inputRef} onInput={handleInput} />
-        <div class="border-b border-gray-700" />
-        <div class="grid grid-cols-[300px_auto_1fr] h-full">
+        <div className="border-b border-gray-700" />
+        <div className="grid grid-cols-[300px_auto_1fr] h-full">
           <ClipboardList
             items={clipboardHistory()}
             activeIndex={activeIndex()}
@@ -254,20 +254,20 @@ export const App = ({ db_path }: { db_path: string }) => {
             scrollAreaRef={scrollAreaRef}
           />
           {clipboardHistory().length > 0 && (
-            <div class="border-l border-gray-700 h-full" />
+            <div className="border-l border-gray-700 h-full" />
           )}
           <div
-            class="w-full h-[calc(100%-4.5rem)] flex flex-col gap-2 mt-2 px-4 overflow-hidden"
+            className="w-full h-[calc(100%-4.5rem)] flex flex-col gap-2 mt-2 px-4 overflow-hidden"
             onContextMenu={handleRightPanelContextMenu}
           >
             {isInitialLoading() ? (
-              <div class="flex flex-col gap-4">
-                <div class="sticky top-0 grid grid-cols-[1fr_1fr_auto] place-items-center">
-                  <div class="animate-pulse bg-gray-700 h-4 w-32 rounded" />
-                  <div class="animate-pulse bg-gray-700 h-4 w-24 rounded" />
-                  <div class="animate-pulse bg-gray-700 h-6 w-6 rounded" />
+              <div className="flex flex-col gap-4">
+                <div className="sticky top-0 grid grid-cols-[1fr_1fr_auto] place-items-center">
+                  <div className="animate-pulse bg-gray-700 h-4 w-32 rounded" />
+                  <div className="animate-pulse bg-gray-700 h-4 w-24 rounded" />
+                  <div className="animate-pulse bg-gray-700 h-6 w-6 rounded" />
                 </div>
-                <div class="animate-pulse bg-gray-700 h-[390px] w-full rounded" />
+                <div className="animate-pulse bg-gray-700 h-[390px] w-full rounded" />
               </div>
             ) : clipboardHistory().length > 0 ? (
               <ClipboardPreview
