@@ -10,7 +10,8 @@
     "serve": "vite preview",
     "tauri": "tauri",
     "changeset": "changeset",
-    "version-packages": "changeset version"
+    "version-packages": "changeset version && node scripts/sync-version.js",
+    "postversion": "node scripts/sync-version.js"
   },
   "license": "MIT",
   "dependencies": {
