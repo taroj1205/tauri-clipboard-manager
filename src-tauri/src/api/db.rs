@@ -106,27 +106,34 @@ pub async fn get_history(
 ) -> Result<Vec<ClipboardHistory>, String> {
     let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
     let mut query = String::from(
-        "SELECT id, content, MAX(date) as date, window_title, window_exe, type, image, COUNT(*) as count FROM clipboard",
+        "WITH LatestEntries AS (
+            SELECT content, MAX(id) as latest_id
+            FROM clipboard
+            GROUP BY content
+        )
+        SELECT c.id, c.content, c.date, c.window_title, c.window_exe, c.type, c.image, COUNT(*) as count 
+        FROM clipboard c
+        INNER JOIN LatestEntries le ON c.id = le.latest_id",
     );
     let mut conditions = Vec::new();
     let mut params_vec: Vec<String> = Vec::new();
 
     if let Some(f) = filter {
         if let Some(t) = f.type_ {
-            conditions.push("type = ?".to_string());
+            conditions.push("c.type = ?".to_string());
             params_vec.push(t);
         }
         if let Some(wt) = f.window_title {
-            conditions.push("window_title = ?".to_string());
+            conditions.push("c.window_title = ?".to_string());
             params_vec.push(wt);
         }
         if let Some(we) = f.window_exe {
-            conditions.push("window_exe = ?".to_string());
+            conditions.push("c.window_exe = ?".to_string());
             params_vec.push(we);
         }
-        if let Some(c) = f.content {
-            conditions.push("content LIKE ?".to_string());
-            params_vec.push(format!("%{}%", c));
+        if let Some(content) = f.content {
+            conditions.push("c.content LIKE ?".to_string());
+            params_vec.push(format!("%{}%", content));
         }
     }
 
@@ -135,17 +142,18 @@ pub async fn get_history(
         query.push_str(&conditions.join(" AND "));
     }
 
-    query.push_str(" GROUP BY id, content, window_title, window_exe, type, image");
+    query.push_str(
+        " GROUP BY c.id, c.content, c.date, c.window_title, c.window_exe, c.type, c.image",
+    );
 
     if let Some(s) = sort {
-        query.push_str(&format!(" ORDER BY {} {}", s.column, s.order));
+        query.push_str(&format!(" ORDER BY c.{} {}", s.column, s.order));
     } else {
-        query.push_str(" ORDER BY MAX(date) DESC");
+        query.push_str(" ORDER BY c.date DESC");
     }
 
     let offset = offset.unwrap_or(0);
     let limit = limit.unwrap_or(20);
-
     query.push_str(&format!(" LIMIT {} OFFSET {}", limit, offset));
 
     let mut stmt = conn.prepare(&query).map_err(|e| e.to_string())?;
