@@ -1,11 +1,13 @@
 name: Release
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
-      - main  # or your default branch name
+      - main
 
 jobs:
   release:
+    if: github.event.pull_request.merged == true
     permissions:
       contents: write
     strategy:

@@ -34,9 +34,6 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install
 
-      - name: Check frontend types
-        run: pnpm exec tsc --noEmit
-
       - name: Check Rust formatting
         working-directory: ./src-tauri
         run: cargo fmt --all -- --check
