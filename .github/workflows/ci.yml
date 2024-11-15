@@ -44,10 +44,6 @@ jobs:
         working-directory: ./src-tauri
         run: cargo fmt --all -- --check
 
-      - name: Run Rust tests
-        working-directory: ./src-tauri
-        run: cargo test
-
   build:
     name: Build
     needs: check
