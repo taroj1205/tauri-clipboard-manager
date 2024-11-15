@@ -21,7 +21,7 @@ export const ClipboardPreview: Component<ClipboardPreviewProps> = (props) => {
             hour: "2-digit",
             minute: "2-digit",
             second: "2-digit",
-          }).format(new Date(props.item.date))}
+          }).format(new Date(props.item?.date))}
         </time>
         <p class="text-gray-400">
           {/* {props.item.window_title} ({props.item.type === "text" ? props.item.count : null}) */}
@@ -30,7 +30,7 @@ export const ClipboardPreview: Component<ClipboardPreviewProps> = (props) => {
           <CopyIcon />
         </button>
       </div>
-      {props.item.type === "image" ? (
+      {props?.item?.type === "image" ? (
         <div class="max-h-[390px] overflow-auto scroll-area">
           <img
             src={`data:image/png;base64,${props.item.image}`}
@@ -40,7 +40,7 @@ export const ClipboardPreview: Component<ClipboardPreviewProps> = (props) => {
         </div>
       ) : (
         <div class="h-full scroll-area w-full max-h-[390px] overflow-auto whitespace-pre-wrap">
-          {highlightText(props.item.content, props.searchQuery)}
+          {highlightText(props.item?.content, props.searchQuery)}
         </div>
       )}
     </div>

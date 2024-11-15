@@ -262,7 +262,7 @@ export const App = ({ db_path }: { db_path: string }) => {
           >
             {isInitialLoading() ? (
               <div class="flex flex-col gap-4">
-                <div class="sticky top-0 grid grid-cols-[1fr_1fr_auto]  place-items-center">
+                <div class="sticky top-0 grid grid-cols-[1fr_1fr_auto] place-items-center">
                   <div class="animate-pulse bg-gray-700 h-4 w-32 rounded" />
                   <div class="animate-pulse bg-gray-700 h-4 w-24 rounded" />
                   <div class="animate-pulse bg-gray-700 h-6 w-6 rounded" />
