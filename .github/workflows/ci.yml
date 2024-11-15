@@ -34,6 +34,12 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install
 
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+
       - name: Check Rust formatting
         working-directory: ./src-tauri
         run: cargo fmt --all -- --check
