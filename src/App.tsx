@@ -287,7 +287,7 @@ export const App = ({ db_path }: { db_path: string }) => {
   };
 
   return (
-    <main class="w-full text-gray-300 p-2 h-[calc(100svh-1rem)] max-h-[calc(100svh-1rem)] overflow-hidden">
+    <main class="w-full text-gray-300 p-2 h-[calc(100svh-1rem)] max-h-[calc(100svh-1rem)]">
       <div class="flex flex-col h-full max-w-[800px] mx-auto">
         <input
           ref={inputRef}
@@ -385,7 +385,7 @@ export const App = ({ db_path }: { db_path: string }) => {
             <div class="border-l border-gray-700 h-full" />
           )}
           <div
-            class="w-full h-full flex flex-col gap-2 mt-2 px-4 overflow-hidden"
+            class="w-full h-[calc(100%-4.5rem)] flex flex-col gap-2 mt-2 px-4 overflow-hidden"
             onContextMenu={handleRightPanelContextMenu}
           >
             {isInitialLoading() ? (
