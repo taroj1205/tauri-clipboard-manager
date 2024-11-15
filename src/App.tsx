@@ -8,6 +8,7 @@ import { writeImageBase64, writeText } from "tauri-plugin-clipboard-api";
 import { ImageIcon } from "./icons/image";
 import { invoke } from "@tauri-apps/api/core";
 import { ContextMenu } from "./components/context-menu";
+import { ClipboardIcon } from "./icons/clipboard";
 
 type ClipboardHistory = {
   id: number;
@@ -43,9 +44,11 @@ const highlightText = (text: string, searchText: string) => {
 
 export const App = ({ db_path }: { db_path: string }) => {
   const [activeIndex, setActiveIndex] = createSignal(0);
-  const [clipboardHistory, setClipboardHistory] = createSignal<
-    ClipboardHistory[]
-  >([]);
+  const [isInitialLoading, setIsInitialLoading] = createSignal(true);
+  const [isLoadingMore, setIsLoadingMore] = createSignal(false);
+  const [clipboardHistory, setClipboardHistory] = createSignal<ClipboardHistory[]>(
+    []
+  );
   const [offset, setOffset] = createSignal(0);
   const limit = 20;
   let inputRef: HTMLInputElement | undefined;
@@ -132,13 +135,24 @@ export const App = ({ db_path }: { db_path: string }) => {
   };
 
   const updateHistory = (offset = 0, limit = 20) => {
+    if (offset === 0) {
+      setIsInitialLoading(true);
+    } else {
+      setIsLoadingMore(true);
+    }
     invoke<ClipboardHistory[]>("get_history", {
       db_path,
       offset,
       limit,
       filter: { content: inputRef?.value },
     }).then((history) => {
-      setClipboardHistory((prev) => [...prev, ...history]);
+      if (offset === 0) {
+        setClipboardHistory(history);
+        setIsInitialLoading(false);
+      } else {
+        setClipboardHistory((prev) => [...prev, ...history]);
+        setIsLoadingMore(false);
+      }
     });
   };
 
@@ -158,6 +172,7 @@ export const App = ({ db_path }: { db_path: string }) => {
 
   const handleInput = () => {
     setActiveIndex(0);
+    setIsInitialLoading(true);
     const activeElement = listRef?.children[0];
     if (activeElement) {
       activeElement.scrollIntoView({
@@ -170,15 +185,18 @@ export const App = ({ db_path }: { db_path: string }) => {
       filter: { content: inputRef?.value },
     }).then((items) => {
       setClipboardHistory(items);
+      setIsInitialLoading(false);
     });
   };
 
   const refreshHistory = () => {
     setOffset(0);
+    setIsInitialLoading(true);
     invoke<ClipboardHistory[]>("get_history", {
       db_path,
     }).then((history) => {
       setClipboardHistory(history);
+      setIsInitialLoading(false);
     });
   };
 
@@ -237,9 +255,40 @@ export const App = ({ db_path }: { db_path: string }) => {
     window.removeEventListener("click", closeContextMenu);
   });
 
+  const SkeletonItem = () => {
+    return (
+      <li class="animate-pulse flex items-start gap-3 rounded-lg p-3">
+        <div class="w-6 h-6 bg-gray-700 rounded" />
+        <div class="flex-1 space-y-2">
+          <div class="h-4 bg-gray-700 rounded w-3/4" />
+          <div class="h-3 bg-gray-700 rounded w-1/4" />
+        </div>
+      </li>
+    );
+  };
+
+  const EmptyState = ({ searchQuery }: { searchQuery?: string }) => {
+    return (
+      <div class="flex flex-col items-center justify-center h-full gap-4 text-gray-400">
+        <ClipboardIcon class="size-12 opacity-50" />
+        {searchQuery ? (
+          <>
+            <p class="text-lg font-medium">No results found</p>
+            <p class="text-sm opacity-75">Try a different search term</p>
+          </>
+        ) : (
+          <>
+            <p class="text-lg font-medium">No clipboard history</p>
+            <p class="text-sm opacity-75">Copy something to get started</p>
+          </>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <main class="w-full text-gray-300 p-2 h-[calc(100svh-1rem)] max-h-[calc(100svh-1rem)] ">
-      <div class="flex flex-col h-full">
+    <main class="w-full text-gray-300 p-2 h-[calc(100svh-1rem)] max-h-[calc(100svh-1rem)] overflow-hidden">
+      <div class="flex flex-col h-full max-w-[800px] mx-auto">
         <input
           ref={inputRef}
           onInput={handleInput}
@@ -247,83 +296,108 @@ export const App = ({ db_path }: { db_path: string }) => {
           class="p-2 mb-2 w-full bg-transparent outline-none text-white"
           placeholder="Type here..."
         />
-        <div class="border-b border-gray-700 " />
-        <div class="grid grid-cols-[1fr_auto_2fr] h-full">
+        <div class="border-b border-gray-700" />
+        <div class="grid grid-cols-[300px_auto_1fr] h-full">
           <div
             ref={scrollAreaRef}
             onScroll={handleScroll}
             class="h-full pb-2 overflow-y-auto invisible hover:visible max-h-[calc(100svh-4.5rem)] hover:overflow-y-auto select-none scroll-area"
           >
-            <ul ref={listRef} class="visible w-full">
-              {clipboardHistory().length === 0 && (
-                <p class="text-lg whitespace-pre overflow-auto p-2">
-                  No content available
-                </p>
-              )}
-              <For each={clipboardHistory()}>
-                {(item, index) => {
-                  const currentDate = getRelativeTime(new Date(item.date));
-                  const prevDate =
-                    index() > 0
-                      ? getRelativeTime(
-                          new Date(clipboardHistory()[index() - 1].date)
-                        )
-                      : null;
+            <ul ref={listRef} class="visible w-full h-full">
+              {isInitialLoading() ? (
+                <For each={Array(10).fill(0)}>
+                  {() => <SkeletonItem />}
+                </For>
+              ) : clipboardHistory().length === 0 ? (
+                <EmptyState searchQuery={inputRef?.value} />
+              ) : (
+                <>
+                  <For each={clipboardHistory()}>
+                    {(item, index) => {
+                      const currentDate = getRelativeTime(
+                        new Date(item.date)
+                      );
+                      const prevDate =
+                        index() > 0
+                          ? getRelativeTime(
+                              new Date(
+                                clipboardHistory()[index() - 1].date
+                              )
+                            )
+                          : null;
 
-                  return (
-                    <>
-                      {(index() === 0 || currentDate !== prevDate) && (
-                        <li class="text-gray-400 text-sm p-2">{currentDate}</li>
-                      )}
-                      <li class="w-full">
-                        <button
-                          type="button"
-                          onDblClick={() => handleCopy(item)}
-                          onClick={() => handleClick(index())}
-                          onContextMenu={(e) => handleContextMenu(e, item)}
-                          class={cn(
-                            "cursor-pointer w-full grid grid-cols-[auto_1fr] gap-2 p-2 h-10 rounded truncate overflow-hidden place-items-center",
-                            {
-                              "bg-active": index() === activeIndex(),
-                            }
+                      return (
+                        <>
+                          {(index() === 0 || currentDate !== prevDate) && (
+                            <li class="text-gray-400 text-sm p-2">
+                              {currentDate}
+                            </li>
                           )}
-                        >
-                          {item.type === "image" ? (
-                            <>
-                              <ImageIcon class="size-4" />
-                              <img
-                                src={`data:image/png;base64,${item.image}`}
-                                alt="clipboard content"
-                                class="h-full w-full object-cover overflow-hidden"
-                              />
-                            </>
-                          ) : (
-                            <>
-                              <DocumentIcon class="size-4" />
-                              <p class="w-full overflow-hidden text-left text-ellipsis">
-                                {highlightText(
-                                  item.content.trim().split("\n")[0],
-                                  inputRef?.value || ""
-                                )}
-                              </p>
-                            </>
-                          )}
-                        </button>
-                      </li>
-                    </>
-                  );
-                }}
-              </For>
+                          <li class="w-full">
+                            <button
+                              type="button"
+                              onDblClick={() => handleCopy(item)}
+                              onClick={() => handleClick(index())}
+                              onContextMenu={(e) => handleContextMenu(e, item)}
+                              class={cn(
+                                "cursor-pointer w-full grid grid-cols-[auto_1fr] gap-2 p-2 h-10 rounded truncate overflow-hidden place-items-center",
+                                {
+                                  "bg-active": index() === activeIndex(),
+                                }
+                              )}
+                            >
+                              {item.type === "image" ? (
+                                <>
+                                  <ImageIcon class="size-4" />
+                                  <img
+                                    src={`data:image/png;base64,${item.image}`}
+                                    alt="clipboard content"
+                                    class="h-full w-full object-cover overflow-hidden"
+                                  />
+                                </>
+                              ) : (
+                                <>
+                                  <DocumentIcon class="size-4" />
+                                  <p class="w-full overflow-hidden text-left text-ellipsis">
+                                    {highlightText(
+                                      item.content.trim().split("\n")[0],
+                                      inputRef?.value || ""
+                                    )}
+                                  </p>
+                                </>
+                              )}
+                            </button>
+                          </li>
+                        </>
+                      );
+                    }}
+                  </For>
+                  {isLoadingMore() && (
+                    <For each={Array(5).fill(0)}>
+                      {() => <SkeletonItem />}
+                    </For>
+                  )}
+                </>
+              )}
             </ul>
           </div>
-          {Object.values(clipboardHistory()).flat().length > 0 && (
+          {clipboardHistory().length > 0 && (
             <div class="border-l border-gray-700 h-full" />
           )}
           <div
             class="w-full h-full flex flex-col gap-2 mt-2 px-4 overflow-hidden"
             onContextMenu={handleRightPanelContextMenu}
           >
-            {Object.values(clipboardHistory()).flat().length > 0 && (
+            {isInitialLoading() ? (
+              <div class="flex flex-col gap-4">
+                <div class="sticky top-0 grid grid-cols-[1fr_1fr_auto] bg-primary place-items-center">
+                  <div class="animate-pulse bg-gray-700 h-4 w-32 rounded" />
+                  <div class="animate-pulse bg-gray-700 h-4 w-24 rounded" />
+                  <div class="animate-pulse bg-gray-700 h-6 w-6 rounded" />
+                </div>
+                <div class="animate-pulse bg-gray-700 h-[390px] w-full rounded" />
+              </div>
+            ) : clipboardHistory().length > 0 ? (
               <>
                 <div class="sticky top-0 grid grid-cols-[1fr_1fr_auto] bg-primary place-items-center">
                   <time class="text-gray-400 text-sm text-left w-full">
@@ -386,6 +460,8 @@ export const App = ({ db_path }: { db_path: string }) => {
                   </div>
                 )}
               </>
+            ) : (
+              null
             )}
           </div>
         </div>
