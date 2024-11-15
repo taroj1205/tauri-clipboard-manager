@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -43,8 +45,29 @@ jobs:
         id: version
         shell: pwsh
         run: |
-          $version = (Get-Content "src-tauri/tauri.conf.json" | ConvertFrom-Json).package.version
+          $version = (Get-Content "package.json" | ConvertFrom-Json).version
           echo "APP_VERSION=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Check for changesets
+        id: check-changesets
+        run: |
+          if (Test-Path ".changeset/*.md") {
+            echo "HAS_CHANGESETS=true" >> $env:GITHUB_OUTPUT
+          } else {
+            echo "HAS_CHANGESETS=false" >> $env:GITHUB_OUTPUT
+          }
+        shell: pwsh
+
+      - name: Version Packages
+        if: steps.check-changesets.outputs.HAS_CHANGESETS == 'true'
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          pnpm version-packages
+          git add .
+          git commit -m "chore: version packages"
+          git push
+        shell: pwsh
 
       - name: Build the app
         id: build-app
@@ -54,14 +77,14 @@ jobs:
         with:
           tagName: v${{ steps.version.outputs.APP_VERSION }}
           releaseName: 'v${{ steps.version.outputs.APP_VERSION }}'
-          releaseBody: 'Automatic release from CI'
+          releaseBody: 'See the assets to download and install this version.'
           releaseDraft: true
           prerelease: false
           packageManager: pnpm
 
       - name: Create Release
         id: create_release
-        if: success() && steps.build-app.outcome == 'success'
+        if: steps.build-app.outcome == 'success'
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -72,7 +95,7 @@ jobs:
           prerelease: false
 
       - name: Publish Release
-        if: success() && steps.build-app.outcome == 'success' && steps.create_release.outcome == 'success'
+        if: steps.build-app.outcome == 'success' && steps.create_release.outcome == 'success'
         uses: eregon/publish-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
