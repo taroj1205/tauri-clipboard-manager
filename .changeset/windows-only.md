@@ -1,5 +1,5 @@
 ---
-"tauri-clipboard-manager": patch
+"clippr": patch
 ---
 
 Configure release workflow for Windows-only builds
