@@ -13,7 +13,7 @@ jobs:
     permissions:
       contents: write
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         platform: [windows-latest]
     runs-on: ${{ matrix.platform }}
@@ -87,14 +87,14 @@ jobs:
           packageManager: pnpm
 
       - name: Upload Windows MSI
-        if: steps.build-app.outcome == 'success'
+        if: success()
         uses: actions/upload-artifact@v3
         with:
           name: Clippr-msi
           path: src-tauri/target/release/bundle/msi/Clippr_${{ steps.version.outputs.APP_VERSION }}_x64_en-US.msi
 
       - name: Upload Windows NSIS Installer
-        if: steps.build-app.outcome == 'success'
+        if: success()
         uses: actions/upload-artifact@v3
         with:
           name: Clippr-nsis
@@ -153,7 +153,7 @@ jobs:
           asset_content_type: application/vnd.microsoft.portable-executable
 
       - name: Publish Release
-        if: steps.build-app.outcome == 'success' && steps.create_release.outcome == 'success'
+        if: success()
         uses: eregon/publish-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
