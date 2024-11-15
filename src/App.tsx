@@ -67,6 +67,8 @@ export const App = ({ db_path }: { db_path: string }) => {
     item: null,
   });
 
+  const [searchTimeout, setSearchTimeout] = createSignal<number>();
+
   const handleContextMenu = (e: MouseEvent, item: ClipboardHistory) => {
     e.preventDefault();
     setContextMenu({
@@ -173,20 +175,17 @@ export const App = ({ db_path }: { db_path: string }) => {
   const handleInput = () => {
     setActiveIndex(0);
     setIsInitialLoading(true);
-    const activeElement = listRef?.children[0];
-    if (activeElement) {
-      activeElement.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
+    if (searchTimeout()) window.clearTimeout(searchTimeout());
+    const timeoutId = window.setTimeout(() => {
+      invoke<ClipboardHistory[]>("get_history", {
+        db_path,
+        filter: { content: inputRef?.value },
+      }).then((items) => {
+        setClipboardHistory(items);
+        setIsInitialLoading(false);
       });
-    }
-    invoke<ClipboardHistory[]>("get_history", {
-      db_path,
-      filter: { content: inputRef?.value },
-    }).then((items) => {
-      setClipboardHistory(items);
-      setIsInitialLoading(false);
-    });
+    }, 300);
+    setSearchTimeout(timeoutId);
   };
 
   const refreshHistory = () => {
@@ -459,7 +458,7 @@ export const App = ({ db_path }: { db_path: string }) => {
                     )}
                   </div>
                 )}
-              </>
+              </> 
             ) : (
               null
             )}
