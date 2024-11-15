@@ -33,10 +33,11 @@ pub struct SortOptions {
 #[tauri::command(rename_all = "snake_case")]
 pub async fn initialize_database(db_path: String) -> Result<(), String> {
     let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-    
+
     // Enable FTS5 extension
-    conn.execute_batch("PRAGMA foreign_keys = ON;").map_err(|e| e.to_string())?;
-    
+    conn.execute_batch("PRAGMA foreign_keys = ON;")
+        .map_err(|e| e.to_string())?;
+
     // Create main clipboard table
     conn.execute(
         "CREATE TABLE IF NOT EXISTS clipboard (
@@ -82,7 +83,7 @@ pub async fn initialize_database(db_path: String) -> Result<(), String> {
             INSERT INTO clipboard_fts(rowid, content, window_title, window_exe)
             VALUES (new.id, new.content, new.window_title, new.window_exe);
         END;
-        "
+        ",
     )
     .map_err(|e| e.to_string())?;
 
@@ -145,7 +146,7 @@ pub async fn get_history(
     sort: Option<SortOptions>,
 ) -> Result<Vec<ClipboardHistory>, String> {
     let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-    
+
     // Start with a base query that always uses the latest entries
     let mut query = String::from(
         "WITH LatestEntries AS (
@@ -155,7 +156,7 @@ pub async fn get_history(
         )
         SELECT c.id, c.content, c.date, c.window_title, c.window_exe, c.type, c.image, 1 as count
         FROM clipboard c
-        INNER JOIN LatestEntries le ON c.id = le.latest_id"
+        INNER JOIN LatestEntries le ON c.id = le.latest_id",
     );
 
     let mut conditions = Vec::new();
@@ -206,10 +207,10 @@ pub async fn get_history(
     query.push_str(&format!(" LIMIT {} OFFSET {}", limit, offset));
 
     let mut stmt = conn.prepare(&query).map_err(|e| e.to_string())?;
-    
+
     // Create references to parameter values after all values are stored
     params.extend(param_values.iter().map(|v| v as &dyn rusqlite::ToSql));
-    
+
     let history_iter = stmt
         .query_map(params.as_slice(), |row| {
             Ok(ClipboardHistory {
