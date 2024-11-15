@@ -12,6 +12,33 @@ pub const MIGRATION: Migration = Migration {
         window_exe TEXT,
         type TEXT,
         image TEXT
-        );",
+        );
+         CREATE VIRTUAL TABLE clipboard_fts USING fts5(
+                content, 
+                window_title, 
+                window_exe,
+                content='clipboard',
+                content_rowid='id'
+            );
+            
+            INSERT INTO clipboard_fts(rowid, content, window_title, window_exe)
+            SELECT id, content, window_title, window_exe FROM clipboard;
+            
+            CREATE TRIGGER clipboard_ai AFTER INSERT ON clipboard BEGIN
+                INSERT INTO clipboard_fts(rowid, content, window_title, window_exe)
+                VALUES (new.id, new.content, new.window_title, new.window_exe);
+            END;
+            
+            CREATE TRIGGER clipboard_ad AFTER DELETE ON clipboard BEGIN
+                INSERT INTO clipboard_fts(clipboard_fts, rowid, content, window_title, window_exe)
+                VALUES('delete', old.id, old.content, old.window_title, old.window_exe);
+            END;
+            
+            CREATE TRIGGER clipboard_au AFTER UPDATE ON clipboard BEGIN
+                INSERT INTO clipboard_fts(clipboard_fts, rowid, content, window_title, window_exe)
+                VALUES('delete', old.id, old.content, old.window_title, old.window_exe);
+                INSERT INTO clipboard_fts(rowid, content, window_title, window_exe)
+                VALUES (new.id, new.content, new.window_title, new.window_exe);
+            END;",
     kind: MigrationKind::Up,
 };

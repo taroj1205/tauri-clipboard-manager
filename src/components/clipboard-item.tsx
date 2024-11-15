@@ -22,7 +22,7 @@ export const ClipboardItem: Component<ClipboardItemProps> = (props) => {
       onDblClick={props.onDoubleClick}
       onClick={props.onClick}
       onContextMenu={props.onContextMenu}
-      class={cn(
+      className={cn(
         "cursor-pointer w-full grid grid-cols-[auto_1fr] gap-2 p-2 h-10 rounded truncate overflow-hidden place-items-center",
         {
           "bg-active bg-opacity-20": props.isActive,
@@ -31,17 +31,17 @@ export const ClipboardItem: Component<ClipboardItemProps> = (props) => {
     >
       {props.item.type === "image" ? (
         <>
-          <ImageIcon class="size-4" />
+          <ImageIcon className="size-4" />
           <img
             src={`data:image/png;base64,${props.item.image}`}
             alt="clipboard content"
-            class="h-full w-full object-cover overflow-hidden"
+            className="h-full w-full object-cover overflow-hidden"
           />
         </>
       ) : (
         <>
-          <DocumentIcon class="size-4" />
-          <p class="w-full overflow-hidden text-left text-ellipsis">
+          <DocumentIcon className="size-4" />
+          <p className="w-full overflow-hidden text-left text-ellipsis">
             {highlightText(
               props.item.content.trim().split("\n")[0],
               props.searchQuery

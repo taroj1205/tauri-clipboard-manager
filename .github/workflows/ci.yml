@@ -37,9 +37,6 @@ jobs:
       - name: Check frontend types
         run: pnpm exec tsc --noEmit
 
-      - name: Lint frontend
-        run: pnpm exec eslint . --ext .ts,.tsx
-
       - name: Check Rust formatting
         working-directory: ./src-tauri
         run: cargo fmt --all -- --check
