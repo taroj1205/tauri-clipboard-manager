@@ -1,5 +1,5 @@
-import { Component } from "solid-js";
-import { ClipboardHistory } from "../types/clipboard";
+import type { Component } from "solid-js";
+import type { ClipboardHistory } from "../types/clipboard";
 import { CopyIcon } from "../icons";
 import { highlightText } from "../utils/highlight";
 
@@ -12,7 +12,7 @@ interface ClipboardPreviewProps {
 export const ClipboardPreview: Component<ClipboardPreviewProps> = (props) => {
   return (
     <div class="flex flex-col gap-4">
-      <div class="sticky top-0 grid grid-cols-[1fr_1fr_auto] bg-primary place-items-center">
+      <div class="sticky top-0 grid grid-cols-[1fr_1fr_auto]  place-items-center">
         <time class="text-gray-400 text-sm text-left w-full">
           {new Intl.DateTimeFormat("ja-JP", {
             year: "numeric",
@@ -39,7 +39,7 @@ export const ClipboardPreview: Component<ClipboardPreviewProps> = (props) => {
           />
         </div>
       ) : (
-        <div class="h-full scroll-area w-full max-h-[390px] overflow-auto whitespace-pre-wrap bg-primary p-2">
+        <div class="h-full scroll-area w-full max-h-[390px] overflow-auto whitespace-pre-wrap p-2">
           {highlightText(props.item.content, props.searchQuery)}
         </div>
       )}

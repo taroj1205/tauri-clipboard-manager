@@ -23,6 +23,7 @@ dependencies = [
  "tauri-plugin-sql",
  "tokio",
  "win_ocr",
+ "window-vibrancy",
 ]
 
 [[package]]

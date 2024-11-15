@@ -25,7 +25,7 @@ export const ClipboardItem: Component<ClipboardItemProps> = (props) => {
       class={cn(
         "cursor-pointer w-full grid grid-cols-[auto_1fr] gap-2 p-2 h-10 rounded truncate overflow-hidden place-items-center",
         {
-          "bg-active": props.isActive,
+          "bg-active bg-opacity-20": props.isActive,
         }
       )}
     >

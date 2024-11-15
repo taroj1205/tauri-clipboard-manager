@@ -6,6 +6,7 @@ use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     AppHandle, Manager,
 };
+use window_vibrancy::{apply_mica, apply_vibrancy, NSVisualEffectMaterial};
 
 mod db;
 use db::MIGRATION;
@@ -72,6 +73,16 @@ fn main() {
                         .build(),
                 )?;
             }
+
+            let window = app.get_webview_window("popup").unwrap();
+
+            #[cfg(target_os = "macos")]
+            apply_vibrancy(&window, NSVisualEffectMaterial::HudWindow, None, None)
+                .expect("Unsupported platform! 'apply_vibrancy' is only supported on macOS");
+
+            #[cfg(target_os = "windows")]
+            apply_mica(&window, Some(true))
+                .expect("Unsupported platform! 'apply_mica' is only supported on Windows 11");
 
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&quit_i])?;

@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 
-html {
+/* html {
   @apply bg-primary;
-}
+} */
 
 body {
   font-family: 'Inter', sans-serif;

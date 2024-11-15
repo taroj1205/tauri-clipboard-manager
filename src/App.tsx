@@ -6,7 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { ClipboardHistory } from "./types/clipboard";
 import { SearchInput } from "./components/search-input";
 import { ClipboardList } from "./components/clipbpard-list";
-import { ClipboardPreview } from "./components/ClipboardPreview";
+import { ClipboardPreview } from "./components/clipboard-preview";
 import { ContextMenu } from "./components/context-menu";
 
 export const App = ({ db_path }: { db_path: string }) => {
@@ -260,7 +260,7 @@ export const App = ({ db_path }: { db_path: string }) => {
           >
             {isInitialLoading() ? (
               <div class="flex flex-col gap-4">
-                <div class="sticky top-0 grid grid-cols-[1fr_1fr_auto] bg-primary place-items-center">
+                <div class="sticky top-0 grid grid-cols-[1fr_1fr_auto]  place-items-center">
                   <div class="animate-pulse bg-gray-700 h-4 w-32 rounded" />
                   <div class="animate-pulse bg-gray-700 h-4 w-24 rounded" />
                   <div class="animate-pulse bg-gray-700 h-6 w-6 rounded" />

@@ -22,9 +22,10 @@
         "center": true,
         "alwaysOnTop": true,
         "skipTaskbar": true,
-        "visibleOnAllWorkspaces": true
-      }
+        "visibleOnAllWorkspaces": true,
+        "transparent": true      }
     ],
+    "macOSPrivateApi": true,
     "security": {
       "csp": null
     }
