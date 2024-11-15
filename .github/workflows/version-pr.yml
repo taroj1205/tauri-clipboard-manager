@@ -31,11 +31,23 @@ jobs:
       - name: Install Dependencies
         run: pnpm install
 
-      - name: Create Release Pull Request
+      - name: Check for changesets
+        id: check-changesets
+        run: |
+          if [ -n "$(find .changeset -name '*.md' -not -name 'README.md')" ]; then
+            echo "has_changesets=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changesets=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create PR or Merge
+        if: steps.check-changesets.outputs.has_changesets == 'true'
         uses: changesets/action@v1
+        with:
+          version: pnpm run version-packages
+          commit: "chore: version packages"
+          title: "chore: version packages"
+          createGithubReleases: false
+          publish: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          title: "chore: version packages"
-          commit: "chore: version packages"
-          publish: false
