@@ -6,7 +6,10 @@ use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     AppHandle, Manager,
 };
-use window_vibrancy::{apply_mica, apply_vibrancy, NSVisualEffectMaterial};
+#[cfg(target_os = "macos")]
+use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial};
+#[cfg(target_os = "windows")]
+use window_vibrancy::apply_mica;
 
 mod db;
 use db::MIGRATION;

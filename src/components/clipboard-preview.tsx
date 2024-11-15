@@ -11,8 +11,8 @@ interface ClipboardPreviewProps {
 
 export const ClipboardPreview: Component<ClipboardPreviewProps> = (props) => {
   return (
-    <div class="flex flex-col gap-4">
-      <div class="sticky top-0 grid grid-cols-[1fr_1fr_auto]  place-items-center">
+    <div class="flex flex-col gap-2">
+      <div class="sticky top-0 grid grid-cols-[1fr_1fr_auto] place-items-center">
         <time class="text-gray-400 text-sm text-left w-full">
           {new Intl.DateTimeFormat("ja-JP", {
             year: "numeric",
@@ -35,11 +35,11 @@ export const ClipboardPreview: Component<ClipboardPreviewProps> = (props) => {
           <img
             src={`data:image/png;base64,${props.item.image}`}
             alt="clipboard content"
-            class="w-full object-contain rounded mt-2"
+            class="w-full object-contain rounded"
           />
         </div>
       ) : (
-        <div class="h-full scroll-area w-full max-h-[390px] overflow-auto whitespace-pre-wrap p-2">
+        <div class="h-full scroll-area w-full max-h-[390px] overflow-auto whitespace-pre-wrap">
           {highlightText(props.item.content, props.searchQuery)}
         </div>
       )}
