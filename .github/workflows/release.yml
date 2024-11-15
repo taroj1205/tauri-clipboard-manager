@@ -52,6 +52,33 @@ jobs:
           $version = (Get-Content "package.json" | ConvertFrom-Json).version
           echo "APP_VERSION=$version" >> $env:GITHUB_OUTPUT
 
+      - name: Generate Release Summary
+        id: release-summary
+        run: |
+          $content = @"
+          ## Major Changes
+
+          -   18a3f94: 🎉 Official 1.0.0 Release
+
+          ### Features:
+
+          -   Clipboard history management
+              -   Text content support
+              -   Image content support with preview
+              -   Rich text support
+          -   System tray integration for quick access
+          -   Global hotkey support for seamless workflow
+          -   Powerful search functionality
+              -   Full-text search for text content
+              -   Image search with visual previews
+              -   Real-time search results
+          -   Modern UI with dark mode support
+          -   Persistent storage for clipboard history
+          "@
+          $content = $content -replace "`n","%0A"
+          echo "SUMMARY=$content" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
       - name: Check for changesets
         id: check-changesets
         run: |
@@ -81,7 +108,7 @@ jobs:
         with:
           tagName: v${{ steps.version.outputs.APP_VERSION }}
           releaseName: 'v${{ steps.version.outputs.APP_VERSION }}'
-          releaseBody: 'See the assets to download and install this version.'
+          releaseBody: ${{ steps.release-summary.outputs.SUMMARY }}
           releaseDraft: true
           prerelease: false
           packageManager: pnpm
@@ -116,7 +143,7 @@ jobs:
         with:
           tag_name: v${{ steps.version.outputs.APP_VERSION }}
           release_name: Release v${{ steps.version.outputs.APP_VERSION }}
-          draft: false
+          draft: true
           prerelease: false
 
       - name: Upload MSI to Release
