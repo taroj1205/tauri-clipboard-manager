@@ -145,35 +145,46 @@ pub async fn get_history(
     sort: Option<SortOptions>,
 ) -> Result<Vec<ClipboardHistory>, String> {
     let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+    
+    // Start with a base query that always uses the latest entries
     let mut query = String::from(
         "WITH LatestEntries AS (
             SELECT content, MAX(id) as latest_id
             FROM clipboard
             GROUP BY content
         )
-        SELECT c.id, c.content, c.date, c.window_title, c.window_exe, c.type, c.image, COUNT(*) as count 
+        SELECT c.id, c.content, c.date, c.window_title, c.window_exe, c.type, c.image, 1 as count
         FROM clipboard c
-        INNER JOIN LatestEntries le ON c.id = le.latest_id",
+        INNER JOIN LatestEntries le ON c.id = le.latest_id"
     );
-    let mut conditions = Vec::new();
-    let mut params_vec: Vec<String> = Vec::new();
 
-    if let Some(f) = filter {
-        if let Some(t) = f.type_ {
-            conditions.push("c.type = ?".to_string());
-            params_vec.push(t);
+    let mut conditions = Vec::new();
+    let mut param_values = Vec::new(); // Hold owned values
+    let mut params: Vec<&dyn rusqlite::ToSql> = Vec::new();
+
+    // Add conditions based on filter
+    if let Some(f) = &filter {
+        // Always join with FTS table if we have any filter
+        query.push_str("\nINNER JOIN clipboard_fts ON clipboard_fts.rowid = c.id");
+
+        if let Some(t) = &f.type_ {
+            conditions.push("c.type = ?");
+            param_values.push(t.clone());
         }
-        if let Some(wt) = f.window_title {
-            conditions.push("EXISTS (SELECT 1 FROM clipboard_fts WHERE clipboard_fts.rowid = c.id AND clipboard_fts.window_title MATCH ?)".to_string());
-            params_vec.push(format!("\"{}\"", wt));
+        if let Some(wt) = &f.window_title {
+            conditions.push("clipboard_fts.window_title MATCH ?");
+            param_values.push(format!("\"{}\"", wt));
         }
-        if let Some(we) = f.window_exe {
-            conditions.push("EXISTS (SELECT 1 FROM clipboard_fts WHERE clipboard_fts.rowid = c.id AND clipboard_fts.window_exe MATCH ?)".to_string());
-            params_vec.push(format!("\"{}\"", we));
+        if let Some(we) = &f.window_exe {
+            conditions.push("clipboard_fts.window_exe MATCH ?");
+            param_values.push(format!("\"{}\"", we));
         }
-        if let Some(content) = f.content {
-            conditions.push("EXISTS (SELECT 1 FROM clipboard_fts WHERE clipboard_fts.rowid = c.id AND clipboard_fts.content MATCH ?)".to_string());
-            params_vec.push(format!("\"{}*\"", content)); // Add * for prefix matching
+        if let Some(content) = &f.content {
+            if !content.is_empty() {
+                conditions.push("clipboard_fts.content MATCH ?");
+                // Use proper FTS query syntax for better matching
+                param_values.push(format!("\"{}\"*", content));
+            }
         }
     }
 
@@ -182,25 +193,23 @@ pub async fn get_history(
         query.push_str(&conditions.join(" AND "));
     }
 
-    query.push_str(
-        " GROUP BY c.id, c.content, c.date, c.window_title, c.window_exe, c.type, c.image",
-    );
-
+    // Apply sorting
     if let Some(s) = sort {
         query.push_str(&format!(" ORDER BY c.{} {}", s.column, s.order));
     } else {
         query.push_str(" ORDER BY c.date DESC");
     }
 
+    // Apply pagination
     let offset = offset.unwrap_or(0);
     let limit = limit.unwrap_or(20);
     query.push_str(&format!(" LIMIT {} OFFSET {}", limit, offset));
 
     let mut stmt = conn.prepare(&query).map_err(|e| e.to_string())?;
-    let params: Vec<&dyn rusqlite::ToSql> = params_vec
-        .iter()
-        .map(|s| s as &dyn rusqlite::ToSql)
-        .collect();
+    
+    // Create references to parameter values after all values are stored
+    params.extend(param_values.iter().map(|v| v as &dyn rusqlite::ToSql));
+    
     let history_iter = stmt
         .query_map(params.as_slice(), |row| {
             Ok(ClipboardHistory {
@@ -217,8 +226,7 @@ pub async fn get_history(
 
     let mut history = Vec::new();
     for entry in history_iter {
-        let entry = entry.map_err(|e| e.to_string())?;
-        history.push(entry);
+        history.push(entry.map_err(|e| e.to_string())?);
     }
 
     Ok(history)
