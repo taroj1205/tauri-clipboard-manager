@@ -1,5 +1,6 @@
 {
   "name": "clippr",
+  "private": true,
   "version": "0.1.0",
   "description": "",
   "type": "module",
@@ -10,8 +11,7 @@
     "serve": "vite preview",
     "tauri": "tauri",
     "changeset": "changeset",
-    "version-packages": "changeset version && node scripts/sync-version.js",
-    "postversion": "node scripts/sync-version.js"
+    "version-packages": "changeset version && node scripts/sync-version.js"
   },
   "license": "MIT",
   "dependencies": {
