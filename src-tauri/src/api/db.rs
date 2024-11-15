@@ -33,19 +33,59 @@ pub struct SortOptions {
 #[tauri::command(rename_all = "snake_case")]
 pub async fn initialize_database(db_path: String) -> Result<(), String> {
     let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
+    
+    // Enable FTS5 extension
+    conn.execute_batch("PRAGMA foreign_keys = ON;").map_err(|e| e.to_string())?;
+    
+    // Create main clipboard table
     conn.execute(
         "CREATE TABLE IF NOT EXISTS clipboard (
             id            INTEGER PRIMARY KEY,
             content       TEXT,
-            date          TEXT,
-            window_title  TEXT,
-            window_exe    TEXT,
-            type          TEXT,
-            image         TEXT
+            date         TEXT,
+            window_title TEXT,
+            window_exe   TEXT,
+            type         TEXT,
+            image        TEXT
         )",
         [],
     )
     .map_err(|e| e.to_string())?;
+
+    // Create FTS5 virtual table
+    conn.execute(
+        "CREATE VIRTUAL TABLE IF NOT EXISTS clipboard_fts USING fts5(
+            content,
+            window_title,
+            window_exe,
+            content='clipboard',
+            content_rowid='id'
+        )",
+        [],
+    )
+    .map_err(|e| e.to_string())?;
+
+    // Create triggers to keep FTS index up to date
+    conn.execute_batch(
+        "
+        CREATE TRIGGER IF NOT EXISTS clipboard_ai AFTER INSERT ON clipboard BEGIN
+            INSERT INTO clipboard_fts(rowid, content, window_title, window_exe)
+            VALUES (new.id, new.content, new.window_title, new.window_exe);
+        END;
+        CREATE TRIGGER IF NOT EXISTS clipboard_ad AFTER DELETE ON clipboard BEGIN
+            INSERT INTO clipboard_fts(clipboard_fts, rowid, content, window_title, window_exe)
+            VALUES('delete', old.id, old.content, old.window_title, old.window_exe);
+        END;
+        CREATE TRIGGER IF NOT EXISTS clipboard_au AFTER UPDATE ON clipboard BEGIN
+            INSERT INTO clipboard_fts(clipboard_fts, rowid, content, window_title, window_exe)
+            VALUES('delete', old.id, old.content, old.window_title, old.window_exe);
+            INSERT INTO clipboard_fts(rowid, content, window_title, window_exe)
+            VALUES (new.id, new.content, new.window_title, new.window_exe);
+        END;
+        "
+    )
+    .map_err(|e| e.to_string())?;
+
     Ok(())
 }
 
@@ -124,16 +164,16 @@ pub async fn get_history(
             params_vec.push(t);
         }
         if let Some(wt) = f.window_title {
-            conditions.push("c.window_title = ?".to_string());
-            params_vec.push(wt);
+            conditions.push("EXISTS (SELECT 1 FROM clipboard_fts WHERE clipboard_fts.rowid = c.id AND clipboard_fts.window_title MATCH ?)".to_string());
+            params_vec.push(format!("\"{}\"", wt));
         }
         if let Some(we) = f.window_exe {
-            conditions.push("c.window_exe = ?".to_string());
-            params_vec.push(we);
+            conditions.push("EXISTS (SELECT 1 FROM clipboard_fts WHERE clipboard_fts.rowid = c.id AND clipboard_fts.window_exe MATCH ?)".to_string());
+            params_vec.push(format!("\"{}\"", we));
         }
         if let Some(content) = f.content {
-            conditions.push("c.content LIKE ?".to_string());
-            params_vec.push(format!("%{}%", content));
+            conditions.push("EXISTS (SELECT 1 FROM clipboard_fts WHERE clipboard_fts.rowid = c.id AND clipboard_fts.content MATCH ?)".to_string());
+            params_vec.push(format!("\"{}*\"", content)); // Add * for prefix matching
         }
     }
 

@@ -148,6 +148,8 @@ export const App = ({ db_path }: { db_path: string }) => {
       }).then((items) => {
         setClipboardHistory(items);
         setIsInitialLoading(false);
+      }).catch(() => {
+        setIsInitialLoading(false);
       });
     }, 300);
     setSearchTimeout(timeoutId);
