@@ -1,5 +1,19 @@
 # clippr
 
+## 1.0.0
+
+### Major Changes
+
+- 99735d2: 🎉 Official 1.0.0 Release
+
+  Features:
+
+  - Clipboard history management
+  - System tray integration
+  - Global hotkey support
+  - Search functionality
+  - Modern UI with dark mode support
+
 ## 0.1.2
 
 ### Patch Changes
