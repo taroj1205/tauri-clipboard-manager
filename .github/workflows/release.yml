@@ -1,8 +1,8 @@
 name: Release
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main  # or your default branch name
 
 jobs:
   release:
@@ -32,14 +32,34 @@ jobs:
           rustup target add x86_64-pc-windows-msvc
 
       - name: Install frontend dependencies
-        run: npm install # or yarn install
+        run: npm install
 
-      - uses: tauri-apps/tauri-action@v0
+      - name: Get version
+        id: version
+        shell: pwsh
+        run: |
+          $version = (Get-Content "src-tauri/tauri.conf.json" | ConvertFrom-Json).package.version
+          echo "APP_VERSION=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: 'App v__VERSION__'
-          releaseBody: 'See the assets to download this version and install.'
-          releaseDraft: true
+          tag_name: v${{ steps.version.outputs.APP_VERSION }}
+          release_name: Release v${{ steps.version.outputs.APP_VERSION }}
+          draft: false
+          prerelease: false
+
+      - name: Build the app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          releaseId: ${{ steps.create_release.outputs.id }}
+          tagName: v${{ steps.version.outputs.APP_VERSION }}
+          releaseName: 'v${{ steps.version.outputs.APP_VERSION }}'
+          releaseBody: 'Automatic release from CI'
+          releaseDraft: false
           prerelease: false
