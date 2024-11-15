@@ -23,6 +23,11 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
@@ -32,7 +37,7 @@ jobs:
           rustup target add x86_64-pc-windows-msvc
 
       - name: Install frontend dependencies
-        run: npm install
+        run: pnpm install
 
       - name: Get version
         id: version
@@ -63,3 +68,4 @@ jobs:
           releaseBody: 'Automatic release from CI'
           releaseDraft: false
           prerelease: false
+          packageManager: pnpm
