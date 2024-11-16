@@ -55,26 +55,19 @@ jobs:
       - name: Generate Release Summary
         id: release-summary
         run: |
-          $content = @"
-          ## Major Changes
-
-          -   18a3f94: 🎉 Official 1.0.0 Release
-
-          ### Features:
-
-          -   Clipboard history management
-              -   Text content support
-              -   Image content support with preview
-              -   Rich text support
-          -   System tray integration for quick access
-          -   Global hotkey support for seamless workflow
-          -   Powerful search functionality
-              -   Full-text search for text content
-              -   Image search with visual previews
-              -   Real-time search results
-          -   Modern UI with dark mode support
-          -   Persistent storage for clipboard history
-          "@
+          $changelog = Get-Content "CHANGELOG.md" -Raw
+          $version = "${{ steps.version.outputs.APP_VERSION }}"
+          
+          # Extract the current version's changes
+          $pattern = "## $version(.*?)(?=## \d|\z)"
+          $match = [regex]::Match($changelog, $pattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)
+          
+          if ($match.Success) {
+              $content = $match.Groups[1].Value.Trim()
+          } else {
+              $content = "Release v$version"
+          }
+          
           $content = $content -replace "`n","%0A"
           echo "SUMMARY=$content" >> $env:GITHUB_OUTPUT
         shell: pwsh
