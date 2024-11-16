@@ -1,5 +1,11 @@
 # Clippr
 
+## 1.2.0
+
+### Minor Changes
+
+- 367ecca: Add position module and improve position management
+
 ## 1.1.0
 
 ### Minor Changes
