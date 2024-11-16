@@ -11,7 +11,7 @@ export const SearchInput: Component<SearchInputProps> = (props) => {
       ref={props.ref}
       onInput={props.onInput}
       type="text"
-      className="p-2 mb-2 w-full bg-transparent outline-none text-white"
+      class="p-2 mb-2 w-full bg-transparent outline-none text-white"
       placeholder="Type here..."
     />
   );

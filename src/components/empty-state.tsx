@@ -7,17 +7,17 @@ interface EmptyStateProps {
 
 export const EmptyState: Component<EmptyStateProps> = (props) => {
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-400">
-      <ClipboardIcon className="size-12 opacity-50" />
+    <div class="flex flex-col items-center justify-center h-full gap-4 text-gray-400">
+      <ClipboardIcon class="size-12 opacity-50" />
       {props.searchQuery ? (
         <>
-          <p className="text-lg font-medium">No results found</p>
-          <p className="text-sm opacity-75">Try a different search term</p>
+          <p class="text-lg font-medium">No results found</p>
+          <p class="text-sm opacity-75">Try a different search term</p>
         </>
       ) : (
         <>
-          <p className="text-lg font-medium">No clipboard history</p>
-          <p className="text-sm opacity-75">Copy something to get started</p>
+          <p class="text-lg font-medium">No clipboard history</p>
+          <p class="text-sm opacity-75">Copy something to get started</p>
         </>
       )}
     </div>
