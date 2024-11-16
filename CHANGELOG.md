@@ -1,5 +1,11 @@
 # clippr
 
+## 1.0.3
+
+### Patch Changes
+
+- 1c58df7: Remove delete button from context menu to simplify the UI and focus on core clipboard functionality.
+
 ## 1.0.2
 
 ### Patch Changes
