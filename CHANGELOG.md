@@ -5,7 +5,6 @@
 ### Patch Changes
 
 - 3db2d0d: Disable default context menu and reset active index on close
-- 3db2d0d: Update release.yml
 
 ## 1.2.0
 
