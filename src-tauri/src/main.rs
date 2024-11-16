@@ -28,6 +28,7 @@ fn toggle_app_window(app: &AppHandle) {
             let _ = window.hide();
         } else {
             let _ = window.show();
+            api::position::center_window_on_current_monitor(&window);
             let _ = window.set_focus();
         }
     }
