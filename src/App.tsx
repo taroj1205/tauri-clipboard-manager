@@ -6,7 +6,6 @@ import { invoke } from "@tauri-apps/api/core";
 import type { ClipboardHistory } from "./types/clipboard";
 import { SearchInput } from "./components/search-input";
 import { ClipboardPreview } from "./components/clipboard-preview";
-import { ContextMenu } from "./components/context-menu";
 import { EmptyState } from "./components/empty-state";
 import { getRelativeTime } from "./utils/time";
 import { SkeletonItem } from "./components/skeleton-item";
@@ -25,38 +24,38 @@ export const App = ({ db_path }: { db_path: string }) => {
   let listRef: HTMLUListElement | undefined;
   let scrollAreaRef: HTMLDivElement | undefined;
 
-  const [contextMenu, setContextMenu] = createSignal<{
-    show: boolean;
-    x: number;
-    y: number;
-    item: ClipboardHistory | null;
-  }>({
-    show: false,
-    x: 0,
-    y: 0,
-    item: null,
-  });
+  // const [contextMenu, setContextMenu] = createSignal<{
+  //   show: boolean;
+  //   x: number;
+  //   y: number;
+  //   item: ClipboardHistory | null;
+  // }>({
+  //   show: false,
+  //   x: 0,
+  //   y: 0,
+  //   item: null,
+  // });
 
   const [searchTimeout, setSearchTimeout] = createSignal<number>();
 
-  const handleContextMenu = (e: MouseEvent, item: ClipboardHistory) => {
-    e.preventDefault();
-    setContextMenu({
-      show: true,
-      x: e.clientX,
-      y: e.clientY,
-      item,
-    });
-  };
+  // const handleContextMenu = (e: MouseEvent, item: ClipboardHistory) => {
+  //   e.preventDefault();
+  //   setContextMenu({
+  //     show: true,
+  //     x: e.clientX,
+  //     y: e.clientY,
+  //     item,
+  //   });
+  // };
 
-  const closeContextMenu = () => {
-    setContextMenu({
-      show: false,
-      x: 0,
-      y: 0,
-      item: null,
-    });
-  };
+  // const closeContextMenu = () => {
+  //   setContextMenu({
+  //     show: false,
+  //     x: 0,
+  //     y: 0,
+  //     item: null,
+  //   });
+  // };
 
   const handleKeyDown = (event: KeyboardEvent) => {
     const list = listRef?.children;
@@ -138,10 +137,10 @@ export const App = ({ db_path }: { db_path: string }) => {
     getCurrentWindow().hide();
   };
 
-  const handleDelete = async (item: ClipboardHistory) => {
-    await invoke<void>("delete_clipboard_from_db", { db_path, id: item.id });
-    refreshHistory();
-  };
+  // const handleDelete = async (item: ClipboardHistory) => {
+  //   await invoke<void>("delete_clipboard_from_db", { db_path, id: item.id });
+  //   refreshHistory();
+  // };
 
   const handleInput = () => {
     setActiveIndex(0);
@@ -163,16 +162,16 @@ export const App = ({ db_path }: { db_path: string }) => {
     setSearchTimeout(timeoutId);
   };
 
-  const refreshHistory = () => {
-    setOffset(0);
-    setIsInitialLoading(true);
-    invoke<ClipboardHistory[]>("get_history", {
-      db_path,
-    }).then((history) => {
-      setClipboardHistory(history);
-      setIsInitialLoading(false);
-    });
-  };
+  // const refreshHistory = () => {
+  //   setOffset(0);
+  //   setIsInitialLoading(true);
+  //   invoke<ClipboardHistory[]>("get_history", {
+  //     db_path,
+  //   }).then((history) => {
+  //     setClipboardHistory(history);
+  //     setIsInitialLoading(false);
+  //   });
+  // };
 
   updateHistory();
 
@@ -219,27 +218,27 @@ export const App = ({ db_path }: { db_path: string }) => {
     setActiveIndex(index);
   };
 
-  const handleRightPanelContextMenu = (e: MouseEvent) => {
-    e.preventDefault();
-    const item = clipboardHistory()[activeIndex()];
-    if (item) {
-      setContextMenu({
-        show: true,
-        x: e.clientX,
-        y: e.clientY,
-        item,
-      });
-    }
-  };
+  // const handleRightPanelContextMenu = (e: MouseEvent) => {
+  //   e.preventDefault();
+  //   const item = clipboardHistory()[activeIndex()];
+  //   if (item) {
+  //     setContextMenu({
+  //       show: true,
+  //       x: e.clientX,
+  //       y: e.clientY,
+  //       item,
+  //     });
+  //   }
+  // };
 
   onMount(() => {
     window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("click", closeContextMenu);
+    // window.addEventListener("click", closeContextMenu);
   });
 
   onCleanup(() => {
     window.removeEventListener("keydown", handleKeyDown);
-    window.removeEventListener("click", closeContextMenu);
+    // window.removeEventListener("click", closeContextMenu);
   });
 
   return (
@@ -285,7 +284,7 @@ export const App = ({ db_path }: { db_path: string }) => {
                               searchQuery={inputRef?.value || ""}
                               onDoubleClick={() => handleCopy(item)}
                               onClick={() => handleClick(index())}
-                              onContextMenu={(e) => handleContextMenu(e, item)}
+                              // onContextMenu={(e) => handleContextMenu(e, item)}
                             />
                           </li>
                         </>
@@ -304,7 +303,7 @@ export const App = ({ db_path }: { db_path: string }) => {
           )}
           <div
             class="w-full h-full flex flex-col gap-2 mt-2 px-4 overflow-hidden"
-            onContextMenu={handleRightPanelContextMenu}
+            // onContextMenu={handleRightPanelContextMenu}
           >
             {isInitialLoading() ? (
               <div class="flex flex-col gap-4">
@@ -325,20 +324,6 @@ export const App = ({ db_path }: { db_path: string }) => {
           </div>
         </div>
       </div>
-      <ContextMenu
-        show={contextMenu().show}
-        x={contextMenu().x}
-        y={contextMenu().y}
-        onDelete={() => {
-          const item = contextMenu().item;
-          if (item) handleDelete(item);
-        }}
-        onCopy={() => {
-          const item = contextMenu().item;
-          if (item) handleCopy(item);
-        }}
-        onClose={closeContextMenu}
-      />
     </main>
   );
 };

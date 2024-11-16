@@ -12,7 +12,7 @@ interface ClipboardItemProps {
   searchQuery: string;
   onDoubleClick: () => void;
   onClick: () => void;
-  onContextMenu: (e: MouseEvent) => void;
+  // onContextMenu: (e: MouseEvent) => void;
 }
 
 export const ClipboardItem: Component<ClipboardItemProps> = (props) => {
@@ -21,7 +21,7 @@ export const ClipboardItem: Component<ClipboardItemProps> = (props) => {
       type="button"
       onDblClick={props.onDoubleClick}
       onClick={props.onClick}
-      onContextMenu={props.onContextMenu}
+      // onContextMenu={props.onContextMenu}
       class={cn(
         "cursor-pointer w-full grid grid-cols-[auto_1fr] gap-2 p-2 h-10 rounded truncate overflow-hidden place-items-center",
         {
