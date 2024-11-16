@@ -1,5 +1,11 @@
 # Clippr
 
+## 1.1.0
+
+### Minor Changes
+
+- a4ecf61: Removed context menu because there is only one function
+
 ## 1.0.3
 
 ### Patch Changes
