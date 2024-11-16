@@ -5,7 +5,7 @@ interface HighlightProps {
 
 export const Highlight = ({ key, children }: HighlightProps) => {
   return (
-    <span data-key={key} className="bg-yellow-500/30 text-white">
+    <span data-key={key} class="bg-yellow-500/30 text-white">
       {children}
     </span>
   );

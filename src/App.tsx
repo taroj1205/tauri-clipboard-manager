@@ -1,13 +1,16 @@
-import { createSignal, onCleanup, onMount } from "solid-js";
+import { createSignal, For, onCleanup, onMount } from "solid-js";
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { writeImageBase64, writeText } from "tauri-plugin-clipboard-api";
 import { invoke } from "@tauri-apps/api/core";
 import type { ClipboardHistory } from "./types/clipboard";
 import { SearchInput } from "./components/search-input";
-import { ClipboardList } from "./components/clipbpard-list";
 import { ClipboardPreview } from "./components/clipboard-preview";
 import { ContextMenu } from "./components/context-menu";
+import { EmptyState } from "./components/empty-state";
+import { getRelativeTime } from "./utils/time";
+import { SkeletonItem } from "./components/skeleton-item";
+import { ClipboardItem } from "./components/clipboard-item";
 
 export const App = ({ db_path }: { db_path: string }) => {
   const [activeIndex, setActiveIndex] = createSignal(0);
@@ -130,6 +133,7 @@ export const App = ({ db_path }: { db_path: string }) => {
     } else {
       writeText(item.content);
     }
+    getCurrentWindow().hide();
   };
 
   const handleDelete = async (item: ClipboardHistory) => {
@@ -235,39 +239,74 @@ export const App = ({ db_path }: { db_path: string }) => {
   });
 
   return (
-    <main className="w-full text-gray-300 p-2 h-[calc(100svh-1rem)] max-h-[calc(100svh-1rem)]">
-      <div className="flex flex-col h-full max-w-[800px] mx-auto">
+    <main class="w-full text-gray-300 p-2 h-[calc(100svh-1rem)] max-h-[calc(100svh-1rem)]">
+      <div class="flex flex-col h-full max-w-[800px] mx-auto">
         <SearchInput ref={inputRef} onInput={handleInput} />
-        <div className="border-b border-gray-700" />
-        <div className="grid grid-cols-[300px_auto_1fr] h-full">
-          <ClipboardList
-            items={clipboardHistory()}
-            activeIndex={activeIndex()}
-            isInitialLoading={isInitialLoading()}
-            isLoadingMore={isLoadingMore()}
-            searchQuery={inputRef?.value || ""}
-            onScroll={handleScroll}
-            onItemClick={handleClick}
-            onItemCopy={handleCopy}
-            onItemContextMenu={handleContextMenu}
-            listRef={listRef}
-            scrollAreaRef={scrollAreaRef}
-          />
+        <div class="border-b border-gray-700" />
+        <div class="grid grid-cols-[300px_auto_1fr] h-full">
+     
+          <div
+      ref={scrollAreaRef}
+      onScroll={handleScroll}
+      class="h-full pb-2 overflow-y-auto invisible hover:visible max-h-[calc(100svh-4.5rem)] hover:overflow-y-auto select-none scroll-area"
+    >
+      <ul ref={listRef} class="visible w-full h-full">
+        {isInitialLoading() ? (
+          <For each={Array(10).fill(0)}>{() => <SkeletonItem />}</For>
+        ) : clipboardHistory().length === 0 ? (
+          <EmptyState searchQuery={inputRef?.value || ""} />
+        ) : (
+          <>
+            <For each={clipboardHistory()}>
+              {(item, index) => {
+                const currentDate = getRelativeTime(new Date(item.date));
+                const prevDate =
+                  index() > 0
+                    ? getRelativeTime(new Date(clipboardHistory()[index() - 1].date))
+                    : null;
+
+                return (
+                  <>
+                    {(index() === 0 || currentDate !== prevDate) && (
+                      <li class="text-gray-400 text-sm p-2">{currentDate}</li>
+                    )}
+                    <li class="w-full">
+                      <ClipboardItem
+                        item={item}
+                        isActive={index() === activeIndex()}
+                        index={index()}
+                        searchQuery={inputRef?.value || ""}
+                        onDoubleClick={() => handleCopy(item)}
+                        onClick={() => handleClick(index())}
+                        onContextMenu={(e) => handleContextMenu(e, item)}
+                      />
+                    </li>
+                  </>
+                );
+              }}
+            </For>
+            {isLoadingMore() && (
+              <For each={Array(5).fill(0)}>{() => <SkeletonItem />}</For>
+            )}
+          </>
+        )}
+      </ul>
+    </div>
           {clipboardHistory().length > 0 && (
-            <div className="border-l border-gray-700 h-full" />
+            <div class="border-l border-gray-700 h-full" />
           )}
           <div
-            className="w-full h-[calc(100%-4.5rem)] flex flex-col gap-2 mt-2 px-4 overflow-hidden"
+            class="w-full h-[calc(100%-4.5rem)] flex flex-col gap-2 mt-2 px-4 overflow-hidden"
             onContextMenu={handleRightPanelContextMenu}
           >
             {isInitialLoading() ? (
-              <div className="flex flex-col gap-4">
-                <div className="sticky top-0 grid grid-cols-[1fr_1fr_auto] place-items-center">
-                  <div className="animate-pulse bg-gray-700 h-4 w-32 rounded" />
-                  <div className="animate-pulse bg-gray-700 h-4 w-24 rounded" />
-                  <div className="animate-pulse bg-gray-700 h-6 w-6 rounded" />
+              <div class="flex flex-col gap-4">
+                <div class="sticky top-0 grid grid-cols-[1fr_1fr_auto] place-items-center">
+                  <div class="animate-pulse bg-gray-700 h-4 w-32 rounded" />
+                  <div class="animate-pulse bg-gray-700 h-4 w-24 rounded" />
+                  <div class="animate-pulse bg-gray-700 h-6 w-6 rounded" />
                 </div>
-                <div className="animate-pulse bg-gray-700 h-[390px] w-full rounded" />
+                <div class="animate-pulse bg-gray-700 h-[390px] w-full rounded" />
               </div>
             ) : clipboardHistory().length > 0 ? (
               <ClipboardPreview

@@ -11,35 +11,37 @@ interface ClipboardPreviewProps {
 
 export const ClipboardPreview: Component<ClipboardPreviewProps> = (props) => {
   return (
-    <div className="flex flex-col gap-2">
-      <div className="sticky top-0 grid grid-cols-[1fr_1fr_auto] place-items-center">
-        <time className="text-gray-400 text-sm text-left w-full">
-          {new Intl.DateTimeFormat("ja-JP", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-          }).format(new Date(props.item?.date))}
-        </time>
-        <p className="text-gray-400">
+    <div class="flex flex-col gap-2">
+      <div class="sticky top-0 grid grid-cols-[1fr_1fr_auto] place-items-center">
+        {props.item?.date && (
+          <time class="text-gray-400 text-sm text-left w-full">
+            {new Intl.DateTimeFormat("ja-JP", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            }).format(new Date(props.item.date))}
+          </time>
+        )}
+        <p class="text-gray-400">
           {/* {props.item.window_title} ({props.item.type === "text" ? props.item.count : null}) */}
         </p>
-        <button type="button" className="text-gray-400" onClick={props.onCopy}>
+        <button type="button" class="text-gray-400" onClick={props.onCopy}>
           <CopyIcon />
         </button>
       </div>
       {props?.item?.type === "image" ? (
-        <div className="max-h-[390px] overflow-auto scroll-area">
+        <div class="max-h-[390px] overflow-auto scroll-area">
           <img
             src={`data:image/png;base64,${props.item.image}`}
             alt="clipboard content"
-            className="w-full object-contain rounded"
+            class="w-full object-contain rounded"
           />
         </div>
       ) : (
-        <div className="h-full scroll-area w-full max-h-[390px] overflow-auto whitespace-pre-wrap">
+        <div class="h-full scroll-area w-full max-h-[390px] overflow-auto whitespace-pre-wrap">
           {highlightText(props.item?.content, props.searchQuery)}
         </div>
       )}
