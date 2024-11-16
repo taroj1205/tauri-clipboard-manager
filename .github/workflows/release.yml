@@ -61,31 +61,14 @@ jobs:
       - name: Generate Release Summary
         id: release-summary
         run: |
-          # Get PR description
           $prNumber = "${{ github.event.pull_request.number }}"
-          $prDescription = $(gh pr view $prNumber --json body -q .body)
-          
-          # Extract the changelog section from PR description
-          $changelogSection = ""
-          if ($prDescription -match "(?s)## Changelog Updates\s*(.*?)(?=##|$)") {
-              $changelogSection = $matches[1].Trim()
-          }
-          
-          if ([string]::IsNullOrWhiteSpace($changelogSection)) {
-              # Fallback to CHANGELOG.md if PR description doesn't contain changelog
-              $content = Get-Content "CHANGELOG.md" -Raw
-              $changelogSection = $content -split '(?=^## )' | Select-Object -First 2 | Select-Object -Last 1
-              $changelogSection = $changelogSection -replace '^## .*\n', '' -replace '\n+$', ''
-          }
-          
-          if ([string]::IsNullOrWhiteSpace($changelogSection)) {
-              $changelogSection = "Release v${{ steps.version.outputs.APP_VERSION }}"
-          }
-          
-          # Set the summary as a multiline environment variable
-          $changelogSection | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "SUMMARY<<EOF" >> $env:GITHUB_OUTPUT
-          echo "$changelogSection" >> $env:GITHUB_OUTPUT
+          $prBody = $(gh pr view $prNumber --json body -q .body)
+          $startMarker = "## Changelog Updates"
+          $endMarker = "## Checklist"
+          $summary = $prBody -split "$startMarker\s*\n" | Select-Object -Last 1 | ForEach-Object { $_ -split "$endMarker" | Select-Object -First 1 }
+          $summary = $summary.Trim()
+          echo "RELEASE_SUMMARY<<EOF" >> $env:GITHUB_OUTPUT
+          echo "$summary" >> $env:GITHUB_OUTPUT
           echo "EOF" >> $env:GITHUB_OUTPUT
         shell: pwsh
         env:
