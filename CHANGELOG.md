@@ -1,5 +1,11 @@
 # clippr
 
+## 1.0.2
+
+### Patch Changes
+
+- d36cebb: Formatted frontend code and made minor bug fixes.
+
 ## 1.0.1
 
 ### Patch Changes
