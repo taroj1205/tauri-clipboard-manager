@@ -4,8 +4,7 @@
 
 ### Patch Changes
 
-- 8b78442: Disable default context menu and reset active index on close
-- a6a71b9: Update release.yml
+- 3db2d0d: Disable default context menu and reset active index on close
 
 ## 1.2.0
 
