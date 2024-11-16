@@ -61,7 +61,7 @@ export const ClipboardList: Component<ClipboardListProps> = (props) => {
                         searchQuery={props.searchQuery}
                         onDoubleClick={() => props.onItemCopy(item)}
                         onClick={() => props.onItemClick(index())}
-                        onContextMenu={(e) => props.onItemContextMenu(e, item)}
+                        // onContextMenu={(e) => props.onItemContextMenu(e, item)}
                       />
                     </li>
                   </>
