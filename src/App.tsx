@@ -211,6 +211,7 @@ export const App = ({ db_path }: { db_path: string }) => {
 
   listen("tauri://blur", () => {
     console.log("blur");
+    setActiveIndex(0);
     blurInput();
   });
 
@@ -242,7 +243,7 @@ export const App = ({ db_path }: { db_path: string }) => {
   });
 
   return (
-    <main class="w-full text-gray-300 p-2 h-[calc(100svh-1rem)] max-h-[calc(100svh-1rem)]">
+    <main class="w-full text-gray-300 p-2 h-[calc(100svh-1rem)] max-h-[calc(100svh-1rem)]" oncontextmenu={(e) => e.preventDefault()}>
       <div class="flex flex-col h-full max-w-[800px] mx-auto">
         <SearchInput ref={inputRef} onInput={handleInput} />
         <div class="border-b border-gray-700" />
