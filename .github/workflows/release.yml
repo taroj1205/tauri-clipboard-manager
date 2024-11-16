@@ -6,14 +6,16 @@ on:
       - main
     paths:
       - '.changeset/**'
+      - 'package.json'
+      - 'CHANGELOG.md'
 
 jobs:
   release:
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'Version Packages')
     permissions:
       contents: write
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         platform: [windows-latest]
     runs-on: ${{ matrix.platform }}
@@ -51,6 +53,12 @@ jobs:
         run: |
           $version = (Get-Content "package.json" | ConvertFrom-Json).version
           echo "APP_VERSION=$version" >> $env:GITHUB_OUTPUT
+          
+          # Verify version format
+          if ($version -notmatch '^\d+\.\d+\.\d+') {
+            echo "::error::Invalid version format: $version"
+            exit 1
+          }
 
       - name: Generate Release Summary
         id: release-summary
@@ -65,32 +73,12 @@ jobs:
           if ($match.Success) {
               $content = $match.Groups[1].Value.Trim()
           } else {
+              echo "::warning::No changelog entry found for version $version"
               $content = "Release v$version"
           }
           
           $content = $content -replace "`n","%0A"
           echo "SUMMARY=$content" >> $env:GITHUB_OUTPUT
-        shell: pwsh
-
-      - name: Check for changesets
-        id: check-changesets
-        run: |
-          if (Test-Path ".changeset/*.md") {
-            echo "HAS_CHANGESETS=true" >> $env:GITHUB_OUTPUT
-          } else {
-            echo "HAS_CHANGESETS=false" >> $env:GITHUB_OUTPUT
-          }
-        shell: pwsh
-
-      - name: Version Packages
-        if: steps.check-changesets.outputs.HAS_CHANGESETS == 'true'
-        run: |
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "github-actions[bot]"
-          pnpm version-packages
-          git add .
-          git commit -m "chore: version packages"
-          git push
         shell: pwsh
 
       - name: Build the app
@@ -102,16 +90,38 @@ jobs:
           tagName: v${{ steps.version.outputs.APP_VERSION }}
           releaseName: 'v${{ steps.version.outputs.APP_VERSION }}'
           releaseBody: ${{ steps.release-summary.outputs.SUMMARY }}
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           packageManager: pnpm
 
       - name: Upload Windows MSI
-        if: success()
+        if: success() && matrix.platform == 'windows-latest'
         uses: actions/upload-artifact@v3
         with:
-          name: Clippr-msi
-          path: src-tauri/target/release/bundle/msi/Clippr_${{ steps.version.outputs.APP_VERSION }}_x64_en-US.msi
+          name: windows-installer
+          path: ${{ steps.build-app.outputs.msiPath }}
+          if-no-files-found: error
+
+      - name: Verify Release
+        if: success()
+        run: |
+          $tag = "v${{ steps.version.outputs.APP_VERSION }}"
+          $release = gh release view $tag --json url
+          if ($null -eq $release) {
+            echo "::error::Release verification failed. Release not found for tag $tag"
+            exit 1
+          }
+          echo "✅ Release verified successfully"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+
+      - name: Clean up
+        if: always()
+        run: |
+          Remove-Item -Path "target" -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item -Path "node_modules" -Recurse -Force -ErrorAction SilentlyContinue
+        shell: pwsh
 
       - name: Upload Windows NSIS Installer
         if: success()
