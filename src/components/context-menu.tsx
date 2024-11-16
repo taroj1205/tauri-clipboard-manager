@@ -13,7 +13,7 @@ export const ContextMenu = (props: ContextMenuProps) => {
   return (
     <Show when={props.show}>
       <div
-        class="fixed z-50 bg-gray-800 rounded shadow-lg py-1 min-w-32"
+        class="fixed z-50 bg-gray-800/90 backdrop-blur-2xl rounded-lg shadow-xl py-1 min-w-32 border border-gray-700/50"
         style={{
           left: `${props.x}px`,
           top: `${props.y}px`,
@@ -21,7 +21,7 @@ export const ContextMenu = (props: ContextMenuProps) => {
       >
         <button
           type="button"
-          class="w-full px-4 py-2 text-left text-white hover:bg-gray-700"
+          class="w-full px-4 py-2 text-left text-white hover:bg-gray-700/70 transition-colors duration-200"
           onClick={() => {
             props.onCopy();
             props.onClose();
@@ -29,16 +29,16 @@ export const ContextMenu = (props: ContextMenuProps) => {
         >
           Copy
         </button>
-        <button
+        {/* <button
           type="button"
-          class="w-full px-4 py-2 text-left text-red-500 hover:bg-gray-700"
+          class="w-full px-4 py-2 text-left text-red-400 hover:bg-gray-700/70 transition-colors duration-200"
           onClick={() => {
             props.onDelete();
             props.onClose();
           }}
         >
           Delete
-        </button>
+        </button> */}
       </div>
     </Show>
   );
