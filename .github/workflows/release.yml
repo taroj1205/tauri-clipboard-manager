@@ -99,8 +99,9 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: windows-installer
-          path: ${{ steps.build-app.outputs.msiPath }}
+          path: src-tauri/target/release/bundle/msi/*.msi
           if-no-files-found: error
+          include-hidden-files: false
 
       - name: Verify Release
         if: success()
