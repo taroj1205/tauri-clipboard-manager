@@ -22,13 +22,18 @@ interface ClipboardListProps {
 export const ClipboardList: Component<ClipboardListProps> = (props) => {
   return (
     <div
-      ref={(el) => { 
+      ref={(el) => {
         props.scrollAreaRef = el;
-       }}
+      }}
       onScroll={props.onScroll}
       class="h-full pb-2 overflow-y-auto invisible hover:visible max-h-[calc(100svh-4.5rem)] hover:overflow-y-auto select-none scroll-area"
     >
-      <ul ref={(el) => { props.listRef = el;  }} class="visible w-full h-full">
+      <ul
+        ref={(el) => {
+          props.listRef = el;
+        }}
+        class="visible w-full h-full"
+      >
         {props.isInitialLoading ? (
           <For each={Array(10).fill(0)}>{() => <SkeletonItem />}</For>
         ) : props.items.length === 0 ? (

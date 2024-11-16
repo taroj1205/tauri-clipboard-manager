@@ -16,7 +16,9 @@ export const App = ({ db_path }: { db_path: string }) => {
   const [activeIndex, setActiveIndex] = createSignal(0);
   const [isInitialLoading, setIsInitialLoading] = createSignal(true);
   const [isLoadingMore, setIsLoadingMore] = createSignal(false);
-  const [clipboardHistory, setClipboardHistory] = createSignal<ClipboardHistory[]>([]);
+  const [clipboardHistory, setClipboardHistory] = createSignal<
+    ClipboardHistory[]
+  >([]);
   const [offset, setOffset] = createSignal(0);
   const limit = 20;
   let inputRef: HTMLInputElement | undefined;
@@ -149,12 +151,14 @@ export const App = ({ db_path }: { db_path: string }) => {
       invoke<ClipboardHistory[]>("get_history", {
         db_path,
         filter: { content: inputRef?.value },
-      }).then((items) => {
-        setClipboardHistory(items);
-        setIsInitialLoading(false);
-      }).catch(() => {
-        setIsInitialLoading(false);
-      });
+      })
+        .then((items) => {
+          setClipboardHistory(items);
+          setIsInitialLoading(false);
+        })
+        .catch(() => {
+          setIsInitialLoading(false);
+        });
     }, 300);
     setSearchTimeout(timeoutId);
   };
@@ -183,7 +187,7 @@ export const App = ({ db_path }: { db_path: string }) => {
 
     // Compare with current history
     const currentHistory = clipboardHistory().slice(0, 20);
-    
+
     // Only update if there are differences
     if (JSON.stringify(newHistory) !== JSON.stringify(currentHistory)) {
       setClipboardHistory(newHistory);
@@ -244,59 +248,62 @@ export const App = ({ db_path }: { db_path: string }) => {
         <SearchInput ref={inputRef} onInput={handleInput} />
         <div class="border-b border-gray-700" />
         <div class="grid grid-cols-[300px_auto_1fr] h-full">
-     
           <div
-      ref={scrollAreaRef}
-      onScroll={handleScroll}
-      class="h-full pb-2 overflow-y-auto invisible hover:visible max-h-[calc(100svh-4.5rem)] hover:overflow-y-auto select-none scroll-area"
-    >
-      <ul ref={listRef} class="visible w-full h-full">
-        {isInitialLoading() ? (
-          <For each={Array(10).fill(0)}>{() => <SkeletonItem />}</For>
-        ) : clipboardHistory().length === 0 ? (
-          <EmptyState searchQuery={inputRef?.value || ""} />
-        ) : (
-          <>
-            <For each={clipboardHistory()}>
-              {(item, index) => {
-                const currentDate = getRelativeTime(new Date(item.date));
-                const prevDate =
-                  index() > 0
-                    ? getRelativeTime(new Date(clipboardHistory()[index() - 1].date))
-                    : null;
+            ref={scrollAreaRef}
+            onScroll={handleScroll}
+            class="h-full pb-2 overflow-y-auto invisible hover:visible max-h-[calc(100svh-4.5rem)] hover:overflow-y-auto select-none scroll-area"
+          >
+            <ul ref={listRef} class="visible w-full h-full">
+              {isInitialLoading() ? (
+                <For each={Array(10).fill(0)}>{() => <SkeletonItem />}</For>
+              ) : clipboardHistory().length === 0 ? (
+                <EmptyState searchQuery={inputRef?.value || ""} />
+              ) : (
+                <>
+                  <For each={clipboardHistory()}>
+                    {(item, index) => {
+                      const currentDate = getRelativeTime(new Date(item.date));
+                      const prevDate =
+                        index() > 0
+                          ? getRelativeTime(
+                              new Date(clipboardHistory()[index() - 1].date)
+                            )
+                          : null;
 
-                return (
-                  <>
-                    {(index() === 0 || currentDate !== prevDate) && (
-                      <li class="text-gray-400 text-sm p-2">{currentDate}</li>
-                    )}
-                    <li class="w-full">
-                      <ClipboardItem
-                        item={item}
-                        isActive={index() === activeIndex()}
-                        index={index()}
-                        searchQuery={inputRef?.value || ""}
-                        onDoubleClick={() => handleCopy(item)}
-                        onClick={() => handleClick(index())}
-                        onContextMenu={(e) => handleContextMenu(e, item)}
-                      />
-                    </li>
-                  </>
-                );
-              }}
-            </For>
-            {isLoadingMore() && (
-              <For each={Array(5).fill(0)}>{() => <SkeletonItem />}</For>
-            )}
-          </>
-        )}
-      </ul>
-    </div>
+                      return (
+                        <>
+                          {(index() === 0 || currentDate !== prevDate) && (
+                            <li class="text-gray-400 text-sm p-2">
+                              {currentDate}
+                            </li>
+                          )}
+                          <li class="w-full">
+                            <ClipboardItem
+                              item={item}
+                              isActive={index() === activeIndex()}
+                              index={index()}
+                              searchQuery={inputRef?.value || ""}
+                              onDoubleClick={() => handleCopy(item)}
+                              onClick={() => handleClick(index())}
+                              onContextMenu={(e) => handleContextMenu(e, item)}
+                            />
+                          </li>
+                        </>
+                      );
+                    }}
+                  </For>
+                  {isLoadingMore() && (
+                    <For each={Array(5).fill(0)}>{() => <SkeletonItem />}</For>
+                  )}
+                </>
+              )}
+            </ul>
+          </div>
           {clipboardHistory().length > 0 && (
             <div class="border-l border-gray-700 h-full" />
           )}
           <div
-            class="w-full h-[calc(100%-4.5rem)] flex flex-col gap-2 mt-2 px-4 overflow-hidden"
+            class="w-full h-full flex flex-col gap-2 mt-2 px-4 overflow-hidden"
             onContextMenu={handleRightPanelContextMenu}
           >
             {isInitialLoading() ? (
