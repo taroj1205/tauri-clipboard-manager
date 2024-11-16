@@ -13,6 +13,9 @@ jobs:
       pull-requests: write
       issues: write
     runs-on: ubuntu-latest
+    outputs:
+      has_changesets: ${{ steps.check-changesets.outputs.has_changesets }}
+      pr_number: ${{ steps.changeset-action.outputs.pullRequestNumber }}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -42,6 +45,7 @@ jobs:
           fi
 
       - name: Create PR or Merge
+        id: changeset-action
         if: steps.check-changesets.outputs.has_changesets == 'true'
         uses: changesets/action@v1
         with:
@@ -50,5 +54,23 @@ jobs:
           title: "Version Packages"
           createGithubReleases: false
           publish: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update PR Description
+        if: steps.check-changesets.outputs.has_changesets == 'true'
+        run: |
+          PR_NUMBER="${{ steps.changeset-action.outputs.pullRequestNumber }}"
+          if [ -n "$PR_NUMBER" ]; then
+            gh pr edit $PR_NUMBER --body "This PR was automatically created by the Version PR workflow to update versions and changelogs.
+
+            ## 
+            This PR includes version updates from changesets. Once merged, a new release will be automatically created.
+
+            ## 
+            - [ ] Review the changelog updates
+            - [ ] Verify version bumps are correct
+            - [ ] Check if any dependencies need manual updates"
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
