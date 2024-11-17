@@ -3,9 +3,9 @@ on:
   pull_request:
     types: [closed]
     branches:
-      - changeset-release/main
+      - main
     paths:
-      - '.changeset/**'
+      - 'CHANGELOG.md'
 
 jobs:
   release:
