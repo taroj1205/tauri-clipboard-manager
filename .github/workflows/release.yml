@@ -3,13 +3,13 @@ on:
   pull_request:
     types: [closed]
     branches:
-      - main
+      - changeset-release/main
     paths:
       - '.changeset/**'
 
 jobs:
   release:
-    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'Version Packages')
+    if: github.event.pull_request.merged == true
     permissions:
       contents: write
     strategy:
@@ -117,20 +117,6 @@ jobs:
           Remove-Item -Path "node_modules" -Recurse -Force -ErrorAction SilentlyContinue
         shell: pwsh
 
-      - name: Upload Windows NSIS Installer
-        if: success()
-        uses: actions/upload-artifact@v3
-        with:
-          name: Clippr-nsis
-          path: src-tauri/target/release/bundle/nsis/clippr_${{ steps.version.outputs.APP_VERSION }}_x64-setup.exe
-
-      - name: Upload Windows Executable
-        if: steps.build-app.outcome == 'success'
-        uses: actions/upload-artifact@v3
-        with:
-          name: Clippr-exe
-          path: src-tauri/target/release/Clippr.exe
-
       - name: Create Release
         id: create_release
         if: steps.build-app.outcome == 'success'
@@ -139,7 +125,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ steps.version.outputs.APP_VERSION }}
-          release_name: Release v${{ steps.version.outputs.APP_VERSION }}
+          release_name: Clippr v${{ steps.version.outputs.APP_VERSION }}
           body: ${{ github.event.pull_request.body }}
           draft: true
           prerelease: false

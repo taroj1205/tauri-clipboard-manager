@@ -5,9 +5,12 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   hasImage,
   hasText,
+  hasHTML,
   onClipboardUpdate,
   readText,
   readImageBase64,
+  readHtml,
+  hasFiles,
 } from "tauri-plugin-clipboard-api";
 import "./styles.css";
 import { App } from "./App";
@@ -26,6 +29,8 @@ const main = async () => {
 
   const [hasImageSignal, setHasImageSignal] = createSignal(false);
   const [hasTextSignal, setHasTextSignal] = createSignal(false);
+  const [hasHtmlSignal, setHasHtmlSignal] = createSignal(false);
+  const [hasFileSignal, setHasFileSignal] = createSignal(false);
   const [prevImage, setPrevImage] = createSignal("");
 
   const [isCopyingFromApp, setIsCopyingFromApp] = createSignal(false);
@@ -36,10 +41,16 @@ const main = async () => {
       setIsCopyingFromApp(false);
       return;
     }
+
+    // Skip if clipboard has file
+    if (hasFileSignal()) return;
+
     const windowTitle = (await appWindow.title()) || "unknown";
     const windowExe = "unknown";
     const type = hasImageSignal()
       ? "image"
+      : hasHtmlSignal()
+      ? "html"
       : hasTextSignal()
       ? "text"
       : "unknown";
@@ -66,7 +77,7 @@ const main = async () => {
         image,
       });
     } else {
-      const content = type === "text" ? await readText() : "";
+      const content = type === "html" ? await readHtml() : await readText();
       await invoke("save_clipboard_to_db", {
         db_path,
         content,
@@ -87,6 +98,8 @@ const main = async () => {
       onClipboardUpdate(async () => {
         setHasImageSignal(await hasImage());
         setHasTextSignal(await hasText());
+        setHasHtmlSignal(await hasHTML());
+        setHasFileSignal(await hasFiles());
 
         await saveClipboard();
         emit("clipboard_saved");

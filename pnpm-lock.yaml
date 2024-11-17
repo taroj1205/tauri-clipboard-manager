@@ -2417,8 +2417,9 @@ snapshots:
   postcss-load-config@4.0.2(postcss@8.4.49):
     dependencies:
       lilconfig: 3.1.2
-      postcss: 8.4.49
       yaml: 2.6.0
+    optionalDependencies:
+      postcss: 8.4.49
 
   postcss-nested@6.2.0(postcss@8.4.49):
     dependencies:
@@ -2658,7 +2659,7 @@ snapshots:
   util-deprecate@1.0.2: {}
 
   valibot@0.40.0(typescript@5.6.3):
-    dependencies:
+    optionalDependencies:
       typescript: 5.6.3
 
   validate-html-nesting@1.2.2: {}
@@ -2685,7 +2686,7 @@ snapshots:
       fsevents: 2.3.3
 
   vitefu@0.2.5(vite@5.4.11):
-    dependencies:
+    optionalDependencies:
       vite: 5.4.11
 
   which@1.3.1:

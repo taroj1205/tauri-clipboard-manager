@@ -40,6 +40,13 @@ export const ClipboardPreview: Component<ClipboardPreviewProps> = (props) => {
             class="w-full object-contain rounded"
           />
         </div>
+      ) : props?.item?.type === "html" ? (
+        <div class="h-full scroll-area w-full max-h-[390px] overflow-auto">
+          <div 
+            class="max-w-none"
+            innerHTML={props.item?.content}
+          />
+        </div>
       ) : (
         <div class="h-full scroll-area w-full max-h-[390px] overflow-auto whitespace-pre-wrap">
           {highlightText(props.item?.content, props.searchQuery)}

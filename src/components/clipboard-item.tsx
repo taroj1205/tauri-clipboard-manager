@@ -3,6 +3,7 @@ import type { ClipboardHistory } from "../types/clipboard";
 import { cn } from "../utils/tailwind";
 import { DocumentIcon } from "../icons";
 import { ImageIcon } from "../icons/image";
+import { CodeIcon } from "../icons/code";
 import { highlightText } from "../utils/highlight";
 
 interface ClipboardItemProps {
@@ -37,6 +38,16 @@ export const ClipboardItem: Component<ClipboardItemProps> = (props) => {
             alt="clipboard content"
             class="h-full w-full object-cover overflow-hidden"
           />
+        </>
+      ) : props.item.type === "html" ? (
+        <>
+          <CodeIcon class="size-4" />
+          <p class="w-full overflow-hidden text-left text-ellipsis">
+            {highlightText(
+              props.item.content.replace(/<[^>]*>/g, '').trim().split("\n")[0],
+              props.searchQuery
+            )}
+          </p>
         </>
       ) : (
         <>

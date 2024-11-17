@@ -67,13 +67,7 @@ jobs:
 
             gh pr edit $PR_NUMBER --body "This PR was automatically created by the Version PR workflow to update versions and changelogs.
 
-            ## Changelog Updates
             $CHANGELOG_CONTENT
-
-          ## Checklist
-          - [ ] Review the changelog updates
-          - [ ] Verify version bumps are correct
-          - [ ] Check if any dependencies need manual updates"
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
