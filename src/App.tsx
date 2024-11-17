@@ -1,7 +1,7 @@
 import { createSignal, For, onCleanup, onMount } from "solid-js";
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { writeImageBase64, writeText } from "tauri-plugin-clipboard-api";
+import { writeHtml, writeImageBase64, writeText } from "tauri-plugin-clipboard-api";
 import { invoke } from "@tauri-apps/api/core";
 import type { ClipboardHistory } from "./types/clipboard";
 import { SearchInput } from "./components/search-input";
@@ -131,11 +131,14 @@ export const App = ({ db_path }: { db_path: string }) => {
     emit("copy-from-app");
     if (item.type === "image") {
       writeImageBase64(item.image);
-    } else {
+    } else if (item.type === "html") {
+      writeHtml(item.content);
+    }
+    else {
       writeText(item.content);
     }
     getCurrentWindow().hide();
-  };
+  }
 
   // const handleDelete = async (item: ClipboardHistory) => {
   //   await invoke<void>("delete_clipboard_from_db", { db_path, id: item.id });

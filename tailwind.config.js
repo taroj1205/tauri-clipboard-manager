@@ -17,5 +17,9 @@ export default {
       },
     },
   },
-  plugins: [scrollbarGutter(), scrollbarWidth(), scrollbarColor()],
+  plugins: [
+    scrollbarGutter(), 
+    scrollbarWidth(), 
+    scrollbarColor(),
+  ],
 };
