@@ -9,7 +9,7 @@ on:
 
 jobs:
   release:
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'Version Packages')
     permissions:
       contents: write
     strategy:
