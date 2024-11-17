@@ -1,5 +1,11 @@
 # Clippr
 
+## 1.3.0
+
+### Minor Changes
+
+- 90e928d: Add support for HTML and ignore file copies
+
 ## 1.2.1
 
 ### Patch Changes
