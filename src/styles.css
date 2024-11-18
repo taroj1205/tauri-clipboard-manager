@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Disable tab index and outline globally */
+* {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+*:focus {
+  outline: none !important;
+}
+
+*:not(input):not(textarea) {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+[tabindex] {
+  outline: none !important;
+}
+
 /* html {
   @apply bg-primary;
 } */
