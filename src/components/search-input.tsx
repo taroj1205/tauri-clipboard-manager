@@ -6,14 +6,20 @@ interface SearchInputProps {
   updateHistory: (offset?: number) => void;
   selectedTypes: () => ClipboardType[];
   setSelectedTypes: (types: ClipboardType[]) => void;
+  selectedSort: () => SortType;
+  setSelectedSort: (sort: SortType) => void;
 }
 
 export type ClipboardType = "text" | "image" | "color" | "files";
+export type SortType = "recent" | "copied";
 
 export const SearchInput: Component<SearchInputProps> = (props) => {
   const [isOpen, setIsOpen] = createSignal(false);
+  const [isSortOpen, setIsSortOpen] = createSignal(false);
   const [isHovering, setIsHovering] = createSignal(false);
+  const [isSortHovering, setIsSortHovering] = createSignal(false);
   let closeTimeout: number | undefined;
+  let sortCloseTimeout: number | undefined;
 
   const types: { value: ClipboardType; label: string }[] = [
     { value: "text", label: "Text" },
@@ -22,7 +28,22 @@ export const SearchInput: Component<SearchInputProps> = (props) => {
     { value: "files", label: "Files" },
   ];
 
-  const toggleType = (type: ClipboardType) => {
+  const sorts: { value: SortType; label: string }[] = [
+    { value: "recent", label: "Most Recent" },
+    { value: "copied", label: "Most Copied" },
+  ];
+
+  const toggleSort = () => {
+    setIsSortOpen((prev) => !prev);
+    setIsOpen(false);
+  };
+
+  const toggleType = () => {
+    setIsOpen((prev) => !prev);
+    setIsSortOpen(false);
+  };
+
+  const selectType = (type: ClipboardType) => {
     const current = props.selectedTypes();
     const newTypes = current.includes(type)
       ? current.filter((t) => t !== type)
@@ -31,11 +52,26 @@ export const SearchInput: Component<SearchInputProps> = (props) => {
     props.updateHistory();
   };
 
+  const selectSort = (sort: SortType) => {
+    props.setSelectedSort(sort);
+    props.updateHistory();
+    setIsSortOpen(false);
+  };
+
   const startCloseTimer = () => {
     clearTimeout(closeTimeout);
     closeTimeout = window.setTimeout(() => {
       if (!isHovering()) {
         setIsOpen(false);
+      }
+    }, 500);
+  };
+
+  const startSortCloseTimer = () => {
+    clearTimeout(sortCloseTimeout);
+    sortCloseTimeout = window.setTimeout(() => {
+      if (!isSortHovering()) {
+        setIsSortOpen(false);
       }
     }, 500);
   };
@@ -50,8 +86,19 @@ export const SearchInput: Component<SearchInputProps> = (props) => {
     startCloseTimer();
   };
 
+  const handleSortMouseEnter = () => {
+    setIsSortHovering(true);
+    clearTimeout(sortCloseTimeout);
+  };
+
+  const handleSortMouseLeave = () => {
+    setIsSortHovering(false);
+    startSortCloseTimer();
+  };
+
   onCleanup(() => {
     clearTimeout(closeTimeout);
+    clearTimeout(sortCloseTimeout);
   });
 
   return (
@@ -63,65 +110,103 @@ export const SearchInput: Component<SearchInputProps> = (props) => {
         class="flex-1 p-2 bg-transparent outline-none text-white"
         placeholder="Type here..."
       />
-      <div
-        class="relative group"
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-      >
-        <button
-          onClick={() => setIsOpen((prev) => !prev)}
-          class="h-full px-3 py-2 flex items-center gap-1 text-gray-300 hover:text-white border-l border-gray-700/50"
+      <div class="flex">
+        <div
+          class="relative group"
+          onMouseEnter={handleSortMouseEnter}
+          onMouseLeave={handleSortMouseLeave}
         >
-          {props.selectedTypes().length === 0
-            ? "All Types"
-            : `${props.selectedTypes().length} Selected`}
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+          <button
+            onClick={toggleSort}
+            class="h-full px-3 py-2 flex items-center gap-1 text-gray-300 hover:text-white border-l border-gray-700/50"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        </button>
-        {isOpen() && (
-          <div
-            class="absolute top-full right-0 mt-1 w-40 bg-[#1e1e21] rounded border border-gray-700 shadow-lg backdrop-blur-md"
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
+            {sorts.find((s) => s.value === props.selectedSort())?.label}
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
+          {isSortOpen() && (
+            <div
+              class="absolute top-full right-0 mt-1 w-40 bg-[#1e1e21] rounded border border-gray-700 shadow-lg backdrop-blur-md"
+              onMouseEnter={handleSortMouseEnter}
+              onMouseLeave={handleSortMouseLeave}
+            >
+              <For each={sorts}>
+                {(sort) => (
+                  <button
+                    onClick={() => selectSort(sort.value)}
+                    class="w-full px-3 py-2 text-left text-gray-300 hover:text-white hover:bg-gray-700/50"
+                  >
+                    {sort.label}
+                  </button>
+                )}
+              </For>
+            </div>
+          )}
+        </div>
+        <div
+          class="relative group"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
+          <button
+            onClick={toggleType}
+            class="h-full px-3 py-2 flex items-center gap-1 text-gray-300 hover:text-white border-l border-gray-700/50"
           >
-            <For each={types}>
-              {(type) => (
-                <button
-                  onClick={() => toggleType(type.value)}
-                  class="w-full px-3 py-2 text-left text-gray-300 hover:bg-active hover:bg-opacity-20 hover:text-white transition-colors duration-200 flex items-center justify-between"
-                >
-                  <span>{type.label}</span>
-                  {props.selectedTypes().includes(type.value) && (
-                    <svg
-                      class="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+            {props.selectedTypes().length === 0
+              ? "All Types"
+              : `${props.selectedTypes().length} Selected`}
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
+          {isOpen() && (
+            <div
+              class="absolute top-full right-0 mt-1 w-40 bg-[#1e1e21] rounded border border-gray-700 shadow-lg backdrop-blur-md"
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
+              <For each={types}>
+                {(type) => (
+                  <button
+                    onClick={() => selectType(type.value)}
+                    class="w-full px-3 py-2 text-left text-gray-300 hover:text-white hover:bg-gray-700/50"
+                  >
+                    <span
+                      class={
+                        props.selectedTypes().includes(type.value)
+                          ? "text-white"
+                          : ""
+                      }
                     >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  )}
-                </button>
-              )}
-            </For>
-          </div>
-        )}
+                      {type.label}
+                    </span>
+                  </button>
+                )}
+              </For>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
