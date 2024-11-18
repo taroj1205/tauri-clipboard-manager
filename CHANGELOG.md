@@ -1,5 +1,16 @@
 # Clippr
 
+## 1.5.0
+
+### Minor Changes
+
+- 6dfdb12: Add dropdown menu for advance filtering
+
+  - Image, Text, Files, and Color
+  - Reset filter when pressing [Escape]
+
+  Made the window slightly larger.
+
 ## 1.4.0
 
 ### Minor Changes
