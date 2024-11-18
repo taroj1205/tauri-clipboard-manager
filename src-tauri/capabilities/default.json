@@ -28,6 +28,8 @@
     "clipboard:read-all",
     "clipboard:write-all",
     "clipboard:allow-read-text",
-    "fs:default"
+    "fs:default",
+    "fs:write-files",
+    "fs:read-files"
   ]
 }

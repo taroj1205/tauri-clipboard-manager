@@ -69,11 +69,9 @@ pub async fn save_clipboard_to_db(
     if let Some(id) = existing_id {
         // Update existing entry
         conn.execute(
-            "UPDATE clipboard SET count = count + 1, last_copied_date = ?, window_title = ?, window_exe = ? WHERE id = ?",
+            "UPDATE clipboard SET count = count + 1, last_copied_date = ? WHERE id = ?",
             params![
                 date,
-                window_title,
-                window_exe,
                 id
             ],
         ).map_err(|e| e.to_string())?;

@@ -2,6 +2,7 @@ import { createSignal, For, onCleanup, onMount } from "solid-js";
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
+  writeFiles,
   writeHtml,
   writeImageBase64,
   writeText,
@@ -17,7 +18,6 @@ import { ClipboardItem } from "./components/clipboard-item";
 
 export const App = ({ db_path }: { db_path: string }) => {
   const [activeIndex, setActiveIndex] = createSignal(0);
-  const [isInitialLoading, setIsInitialLoading] = createSignal(true);
   const [isLoadingMore, setIsLoadingMore] = createSignal(false);
   const [clipboardHistory, setClipboardHistory] = createSignal<
     ClipboardHistory[]
@@ -73,9 +73,7 @@ export const App = ({ db_path }: { db_path: string }) => {
           block: "center",
         });
         // Only load more if we have at least 20 items in the current history
-        if (
-          activeIndex() >= totalLength - 5
-        ) {
+        if (activeIndex() >= totalLength - 5) {
           setOffset((prev) => prev + limit);
           updateHistory(offset(), limit);
         }
@@ -86,7 +84,13 @@ export const App = ({ db_path }: { db_path: string }) => {
           behavior: "smooth",
           block: "center",
         });
-      } else if (event.key === "Enter") {
+      } else if (
+        event.key === "Enter" ||
+        event.key === "NumpadEnter" ||
+        (event.ctrlKey &&
+          event.key === "c" &&
+          !window.getSelection()?.toString())
+      ) {
         const item = clipboardHistory()[activeIndex()];
         handleCopy(item);
         getCurrentWindow().hide();
@@ -100,7 +104,7 @@ export const App = ({ db_path }: { db_path: string }) => {
         } else {
           getCurrentWindow().hide();
         }
-      } else {
+      } else if (!event.ctrlKey) {
         inputRef?.focus();
       }
     } catch (error) {
@@ -130,7 +134,6 @@ export const App = ({ db_path }: { db_path: string }) => {
     }).then((history) => {
       if (offset === 0) {
         setClipboardHistory(history);
-        setIsInitialLoading(false);
       } else {
         setClipboardHistory((prev) => [...prev, ...history]);
         setIsLoadingMore(false);
@@ -142,8 +145,8 @@ export const App = ({ db_path }: { db_path: string }) => {
     emit("copy-from-app");
     if (item.type === "image") {
       writeImageBase64(item.image);
-    } else if (item.type === "html") {
-      writeHtml(item.content);
+    } else if (item.type === "files") {
+      writeFiles(item.content.split(","));
     } else {
       writeText(item.content);
     }
@@ -195,8 +198,6 @@ export const App = ({ db_path }: { db_path: string }) => {
         offset: 0,
         limit: 20,
       });
-
-      console.log(newHistory);
 
       // Compare with current history
       const currentHistory = clipboardHistory().slice(0, 20);
@@ -274,7 +275,7 @@ export const App = ({ db_path }: { db_path: string }) => {
             class="h-full pb-2 overflow-y-auto invisible hover:visible max-h-[calc(100svh-4.5rem)] hover:overflow-y-auto select-none scroll-area"
           >
             <ul ref={listRef} class="visible w-full h-full">
-              { clipboardHistory().length === 0 ? (
+              {clipboardHistory().length === 0 ? (
                 <EmptyState searchQuery={inputRef?.value || ""} />
               ) : (
                 <>

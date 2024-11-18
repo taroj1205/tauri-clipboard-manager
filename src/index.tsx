@@ -10,12 +10,13 @@ import {
   readImageBase64,
   readHtml,
   hasFiles,
+  readFiles,
+  onImageUpdate,
 } from "tauri-plugin-clipboard-api";
 import "./styles.css";
 import { App } from "./App";
 import { invoke } from "@tauri-apps/api/core";
 import { appConfigDir } from "@tauri-apps/api/path";
-// import { writeFile, BaseDirectory } from "@tauri-apps/plugin-fs";
 import { path } from "@tauri-apps/api";
 import { ActiveWindowProps } from "./types/clipboard";
 
@@ -31,35 +32,40 @@ const main = async () => {
   const [isCopyingFromApp, setIsCopyingFromApp] = createSignal(false);
   createSignal(false);
 
+  onImageUpdate((b64Str) => {
+    console.log(b64Str);
+  });
+
+
   const saveClipboard = async () => {
-    if (isCopyingFromApp()) {
-      setIsCopyingFromApp(false);
-      return;
-    }
+    // if (isCopyingFromApp()) {
+    //   setIsCopyingFromApp(false);
+    //   return;
+    // }
 
     
-    const type = await hasFiles() ? "file" : await hasImage() ? "image" : await hasHTML() ? "html" : await hasText() ? "text" : null;
-
-    // Skip if clipboard has file
-    if (type === "file") return;
+    const type = await hasFiles() ? "files" : await hasImage() ? "image" : await hasHTML() ? "html" : await hasText() ? "text" : null;
+    console.log(type);
 
     const window = await invoke("get_current_window") as ActiveWindowProps;
     const windowTitle = window.title;
     const windowExe = window.process_path.split(/[/\\]/).pop() || window.process_path;
 
-    if (type === "image") {
+    if (type === "files") {
+      const files = await readFiles();
+      await invoke("save_clipboard_to_db", {
+        db_path,
+        content: files.toString(),
+        window_title: windowTitle,
+        window_exe: windowExe,
+        type,
+        image: null,
+        html: null,
+      });
+    } else if (type === "image") {
       const image = await readImageBase64();
       if (image !== prevImage()) setPrevImage(image);
       else return;
-      // const path = new Date().toISOString().replace(/:/g, "-");
-      // const file = await writeFile(
-      //   `images/${path}`,
-      //   new Uint8Array(Buffer.from(image, "base64")),
-      //   {
-      //     baseDir: BaseDirectory.AppData,
-      //   }
-      // );
-      // console.log(file);
       await invoke("save_clipboard_to_db", {
         db_path,
         content: "",
@@ -74,12 +80,14 @@ const main = async () => {
       if (content !== prevText()) setPrevText(content);
       else return;
       const html = type === "html" ? await readHtml() : "";
+      const isUrl = type === "text" && /^(https?:\/\/|www\.)\S+$/i.test(content);
+      const isColorCode = type === "text" && /^(#[0-9A-Fa-f]{3,8}|rgb\(.*\)|rgba\(.*\)|hsl\(.*\)|hsla\(.*\))$/.test(content.trim());
       await invoke("save_clipboard_to_db", {
         db_path,
         content,
         window_title: windowTitle,
         window_exe: windowExe,
-        type,
+        type: isColorCode ? "color" : isUrl ? "url" : type,
         image: null,
         html,
       });
