@@ -1,5 +1,11 @@
 # Clippr
 
+## 1.6.1
+
+### Patch Changes
+
+- cd7525a: Fixed how check icon was not shown in dropdown
+
 ## 1.6.0
 
 ### Minor Changes
