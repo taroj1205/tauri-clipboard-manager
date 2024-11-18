@@ -1,5 +1,12 @@
 # Clippr
 
+## 1.6.2
+
+### Patch Changes
+
+- cc68107: Disabled tab index and removed focus outlines globally to improve visual cleanliness
+- 8365641: Fix scroll always trying to fetch even if last item
+
 ## 1.6.1
 
 ### Patch Changes
