@@ -1,164 +1,51 @@
 name: Release
+
 on:
-  pull_request:
-    types: [closed]
+  push:
+    paths:
+      - ".changeset/**"
     branches:
       - main
-    paths:
-      - 'CHANGELOG.md'
 
 jobs:
   release:
-    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'Version Packages')
     permissions:
       contents: write
     strategy:
       fail-fast: false
       matrix:
         platform: [windows-latest]
+
     runs-on: ${{ matrix.platform }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
-
-      - name: Install Rust stable
+      - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install dependencies (windows only)
+      - name: Install dependencies (Windows only)
         if: matrix.platform == 'windows-latest'
         run: |
-          rustup target add x86_64-pc-windows-msvc
-
-      - name: Install frontend dependencies
-        run: pnpm install
-
-      - name: Get version
-        id: version
-        shell: pwsh
-        run: |
-          $version = (Get-Content "package.json" | ConvertFrom-Json).version
-          echo "APP_VERSION=$version" >> $env:GITHUB_OUTPUT
-          
-          # Verify version format
-          if ($version -notmatch '^\d+\.\d+\.\d+') {
-            echo "::error::Invalid version format: $version"
-            exit 1
-          }
-
-      - name: Generate Release Summary
-        id: release-summary
-        run: |
-          $prNumber = "${{ github.event.pull_request.number }}"
-          $prBody = $(gh pr view $prNumber --json body -q .body)
-          $startMarker = "## Changelog Updates"
-          $endMarker = "## Checklist"
-          $summary = $prBody -split "$startMarker\s*\n" | Select-Object -Last 1 | ForEach-Object { $_ -split "$endMarker" | Select-Object -First 1 }
-          $summary = $summary.Trim()
-          echo "RELEASE_SUMMARY<<EOF" >> $env:GITHUB_OUTPUT
-          echo "$summary" >> $env:GITHUB_OUTPUT
-          echo "EOF" >> $env:GITHUB_OUTPUT
-        shell: pwsh
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          npm install -g pnpm
+          pnpm install
 
       - name: Build the app
-        id: build-app
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: v${{ steps.version.outputs.APP_VERSION }}
-          releaseName: 'v${{ steps.version.outputs.APP_VERSION }}'
-          releaseBody: ${{ steps.release-summary.outputs.SUMMARY }}
-          releaseDraft: false
-          prerelease: false
-          packageManager: pnpm
-
-      - name: Upload Windows MSI
-        if: success() && matrix.platform == 'windows-latest'
-        uses: actions/upload-artifact@v3
-        with:
-          name: windows-installer
-          path: src-tauri/target/release/bundle/msi/*.msi
-          if-no-files-found: error
-          include-hidden-files: false
-
-      - name: Verify Release
-        if: success()
-        run: |
-          $tag = "v${{ steps.version.outputs.APP_VERSION }}"
-          $release = gh release view $tag --json url
-          if ($null -eq $release) {
-            echo "::error::Release verification failed. Release not found for tag $tag"
-            exit 1
-          }
-          echo "✅ Release verified successfully"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: pwsh
-
-      - name: Clean up
-        if: always()
-        run: |
-          Remove-Item -Path "target" -Recurse -Force -ErrorAction SilentlyContinue
-          Remove-Item -Path "node_modules" -Recurse -Force -ErrorAction SilentlyContinue
-        shell: pwsh
+        run: pnpm tauri build
 
       - name: Create Release
-        id: create_release
-        if: steps.build-app.outcome == 'success'
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/Clippr.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ steps.version.outputs.APP_VERSION }}
-          release_name: Clippr v${{ steps.version.outputs.APP_VERSION }}
-          body: ${{ steps.release-summary.outputs.SUMMARY }}
-          draft: true
-          prerelease: false
-
-      - name: Upload MSI to Release
-        if: steps.create_release.outcome == 'success'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: src-tauri/target/release/bundle/msi/Clippr_${{ steps.version.outputs.APP_VERSION }}_x64_en-US.msi
-          asset_name: Clippr_${{ steps.version.outputs.APP_VERSION }}_x64_en-US.msi
-          asset_content_type: application/x-msi
-
-      - name: Upload NSIS to Release
-        if: steps.create_release.outcome == 'success'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: src-tauri/target/release/bundle/nsis/clippr_${{ steps.version.outputs.APP_VERSION }}_x64-setup.exe
-          asset_name: clippr_${{ steps.version.outputs.APP_VERSION }}_x64-setup.exe
-          asset_content_type: application/vnd.microsoft.portable-executable
-
-      - name: Upload Executable to Release
-        if: steps.create_release.outcome == 'success'
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: src-tauri/target/release/Clippr.exe
-          asset_name: Clippr_${{ steps.version.outputs.APP_VERSION }}_x64.exe
-          asset_content_type: application/vnd.microsoft.portable-executable
