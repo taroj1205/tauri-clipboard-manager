@@ -44,7 +44,7 @@ export const ClipboardItem: Component<ClipboardItemProps> = (props) => {
           <CodeIcon class="size-4" />
           <p class="w-full overflow-hidden text-left text-ellipsis">
             {highlightText(
-              props.item.content.replace(/<[^>]*>/g, '').trim().split("\n")[0],
+              props.item.content.trim().split("\n")[0],
               props.searchQuery
             )}
           </p>

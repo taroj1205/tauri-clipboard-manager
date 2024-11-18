@@ -7,13 +7,15 @@ use super::image::extract_text_from_base64;
 #[derive(Serialize, Deserialize)]
 pub struct ClipboardHistory {
     content: String,
-    date: String,
+    first_copied_date: String,
+    last_copied_date: String,
     window_title: String,
     window_exe: String,
     #[serde(rename = "type")]
     type_: String,
     count: i32,
     image: String,
+    html: String,
 }
 
 #[derive(Deserialize)]
@@ -31,95 +33,76 @@ pub struct SortOptions {
 }
 
 #[tauri::command(rename_all = "snake_case")]
-pub async fn initialize_database(db_path: String) -> Result<(), String> {
-    let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
-
-    // Enable FTS5 extension
-    conn.execute_batch("PRAGMA foreign_keys = ON;")
-        .map_err(|e| e.to_string())?;
-
-    // Create main clipboard table
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS clipboard (
-            id            INTEGER PRIMARY KEY,
-            content       TEXT,
-            date         TEXT,
-            window_title TEXT,
-            window_exe   TEXT,
-            type         TEXT,
-            image        TEXT
-        )",
-        [],
-    )
-    .map_err(|e| e.to_string())?;
-
-    // Create FTS5 virtual table
-    conn.execute(
-        "CREATE VIRTUAL TABLE IF NOT EXISTS clipboard_fts USING fts5(
-            content,
-            window_title,
-            window_exe,
-            content='clipboard',
-            content_rowid='id'
-        )",
-        [],
-    )
-    .map_err(|e| e.to_string())?;
-
-    // Create triggers to keep FTS index up to date
-    conn.execute_batch(
-        "
-        CREATE TRIGGER IF NOT EXISTS clipboard_ai AFTER INSERT ON clipboard BEGIN
-            INSERT INTO clipboard_fts(rowid, content, window_title, window_exe)
-            VALUES (new.id, new.content, new.window_title, new.window_exe);
-        END;
-        CREATE TRIGGER IF NOT EXISTS clipboard_ad AFTER DELETE ON clipboard BEGIN
-            INSERT INTO clipboard_fts(clipboard_fts, rowid, content, window_title, window_exe)
-            VALUES('delete', old.id, old.content, old.window_title, old.window_exe);
-        END;
-        CREATE TRIGGER IF NOT EXISTS clipboard_au AFTER UPDATE ON clipboard BEGIN
-            INSERT INTO clipboard_fts(clipboard_fts, rowid, content, window_title, window_exe)
-            VALUES('delete', old.id, old.content, old.window_title, old.window_exe);
-            INSERT INTO clipboard_fts(rowid, content, window_title, window_exe)
-            VALUES (new.id, new.content, new.window_title, new.window_exe);
-        END;
-        ",
-    )
-    .map_err(|e| e.to_string())?;
-
-    Ok(())
-}
-
-#[tauri::command(rename_all = "snake_case")]
 pub async fn save_clipboard_to_db(
     db_path: String,
     content: String,
     window_title: String,
     window_exe: String,
     type_: String,
+    html: Option<String>,
     image: Option<String>,
 ) -> Result<i64, String> {
     let conn = Connection::open(db_path.clone()).map_err(|e| e.to_string())?;
     let date = Utc::now().to_rfc3339();
-    conn.execute(
-        "INSERT INTO clipboard (content, date, window_title, window_exe, type, image) VALUES (?, ?, ?, ?, ?, ?)",
-        params![
-            content,
-            date,
-            window_title,
-            window_exe,
-            type_,
-            image.clone().unwrap_or_default()
-        ],
-    ).map_err(|e| e.to_string())?;
-    let id = conn.last_insert_rowid();
 
-    if type_ == "image" {
-        let base64_str = image.unwrap_or_default();
-        let text = extract_text_from_base64(base64_str).await?;
-        update_clipboard_in_db(db_path, id, text).await?;
+    // Check if content already exists
+    let existing_id: Option<i64> = if type_ == "image" {
+        // For images, check the image column
+        if let Some(img) = &image {
+            let mut stmt = conn.prepare("SELECT id FROM clipboard WHERE image = ?")
+                .map_err(|e| e.to_string())?;
+            stmt.query_row(params![img], |row| row.get(0))
+                .ok()
+        } else {
+            None
+        }
+    } else {
+        // For other types, check the content column
+        let mut stmt = conn.prepare("SELECT id FROM clipboard WHERE content = ?")
+            .map_err(|e| e.to_string())?;
+        stmt.query_row(params![content], |row| row.get(0))
+            .ok()
+    };
+
+    println!("Existing ID: {:?}", existing_id);
+
+    if let Some(id) = existing_id {
+        // Update existing entry
+        conn.execute(
+            "UPDATE clipboard SET count = count + 1, last_copied_date = ?, window_title = ?, window_exe = ? WHERE id = ?",
+            params![
+                date,
+                window_title,
+                window_exe,
+                id
+            ],
+        ).map_err(|e| e.to_string())?;
+        Ok(id)
+    } else {
+        // Insert new entry
+        conn.execute(
+            "INSERT INTO clipboard (content, first_copied_date, last_copied_date, window_title, window_exe, type, image, html, count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            params![
+                content,
+                date,
+                date,
+                window_title,
+                window_exe,
+                type_,
+                image.clone().unwrap_or_default(),
+                html.clone().unwrap_or_default(),
+                1
+            ],
+        ).map_err(|e| e.to_string())?;
+        let id = conn.last_insert_rowid();
+
+        if type_ == "image" {
+            let base64_str = image.unwrap_or_default();
+            let text = extract_text_from_base64(base64_str).await?;
+            update_clipboard_in_db(db_path, id, text).await?;
+        }
+        Ok(id)
     }
-    Ok(id)
 }
 
 #[tauri::command(rename_all = "snake_case")]
@@ -149,14 +132,8 @@ pub async fn get_history(
 
     // Start with a base query that always uses the latest entries
     let mut query = String::from(
-        "WITH LatestEntries AS (
-            SELECT content, MAX(id) as latest_id
-            FROM clipboard
-            GROUP BY content
-        )
-        SELECT c.id, c.content, c.date, c.window_title, c.window_exe, c.type, c.image, 1 as count
-        FROM clipboard c
-        INNER JOIN LatestEntries le ON c.id = le.latest_id",
+        "SELECT c.id, c.content, c.first_copied_date, c.last_copied_date, c.window_title, c.window_exe, c.type, c.image, c.html, c.count
+        FROM clipboard c"
     );
 
     let mut conditions = Vec::new();
@@ -198,7 +175,7 @@ pub async fn get_history(
     if let Some(s) = sort {
         query.push_str(&format!(" ORDER BY c.{} {}", s.column, s.order));
     } else {
-        query.push_str(" ORDER BY c.date DESC");
+        query.push_str(" ORDER BY c.last_copied_date DESC");
     }
 
     // Apply pagination
@@ -215,12 +192,14 @@ pub async fn get_history(
         .query_map(params.as_slice(), |row| {
             Ok(ClipboardHistory {
                 content: row.get(1)?,
-                date: row.get(2)?,
-                window_title: row.get(3)?,
-                window_exe: row.get(4)?,
-                type_: row.get(5)?,
-                image: row.get(6)?,
-                count: row.get(7)?,
+                first_copied_date: row.get(2)?,
+                last_copied_date: row.get(3)?,
+                window_title: row.get(4)?,
+                window_exe: row.get(5)?,
+                type_: row.get(6)?,
+                image: row.get(7)?,
+                html: row.get(8)?,
+                count: row.get(9)?,
             })
         })
         .map_err(|e| e.to_string())?;

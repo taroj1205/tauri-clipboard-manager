@@ -1,7 +1,6 @@
 import { render } from "solid-js/web";
 import { createSignal } from "solid-js";
 import { emit, listen } from "@tauri-apps/api/event";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   hasImage,
   hasText,
@@ -18,6 +17,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { appConfigDir } from "@tauri-apps/api/path";
 // import { writeFile, BaseDirectory } from "@tauri-apps/plugin-fs";
 import { path } from "@tauri-apps/api";
+import { ActiveWindowProps } from "./types/clipboard";
 
 const main = async () => {
   const app_config_dir = await appConfigDir();
@@ -25,13 +25,8 @@ const main = async () => {
 
   const root = document.getElementById("root");
 
-  const appWindow = getCurrentWindow();
-
-  const [hasImageSignal, setHasImageSignal] = createSignal(false);
-  const [hasTextSignal, setHasTextSignal] = createSignal(false);
-  const [hasHtmlSignal, setHasHtmlSignal] = createSignal(false);
-  const [hasFileSignal, setHasFileSignal] = createSignal(false);
   const [prevImage, setPrevImage] = createSignal("");
+  const [prevText, setPrevText] = createSignal("");
 
   const [isCopyingFromApp, setIsCopyingFromApp] = createSignal(false);
   createSignal(false);
@@ -42,18 +37,15 @@ const main = async () => {
       return;
     }
 
-    // Skip if clipboard has file
-    if (hasFileSignal()) return;
+    
+    const type = await hasFiles() ? "file" : await hasImage() ? "image" : await hasHTML() ? "html" : await hasText() ? "text" : null;
 
-    const windowTitle = (await appWindow.title()) || "unknown";
-    const windowExe = "unknown";
-    const type = hasImageSignal()
-      ? "image"
-      : hasHtmlSignal()
-      ? "html"
-      : hasTextSignal()
-      ? "text"
-      : "unknown";
+    // Skip if clipboard has file
+    if (type === "file") return;
+
+    const window = await invoke("get_current_window") as ActiveWindowProps;
+    const windowTitle = window.title;
+    const windowExe = window.process_path.split(/[/\\]/).pop() || window.process_path;
 
     if (type === "image") {
       const image = await readImageBase64();
@@ -75,9 +67,13 @@ const main = async () => {
         window_exe: windowExe,
         type,
         image,
+        html: null,
       });
     } else {
-      const content = type === "html" ? await readHtml() : await readText();
+      const content = await readText();
+      if (content !== prevText()) setPrevText(content);
+      else return;
+      const html = type === "html" ? await readHtml() : "";
       await invoke("save_clipboard_to_db", {
         db_path,
         content,
@@ -85,6 +81,7 @@ const main = async () => {
         window_exe: windowExe,
         type,
         image: null,
+        html,
       });
     }
   };
@@ -96,11 +93,6 @@ const main = async () => {
       });
 
       onClipboardUpdate(async () => {
-        setHasImageSignal(await hasImage());
-        setHasTextSignal(await hasText());
-        setHasHtmlSignal(await hasHTML());
-        setHasFileSignal(await hasFiles());
-
         await saveClipboard();
         emit("clipboard_saved");
       });

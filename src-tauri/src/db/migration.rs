@@ -7,11 +7,14 @@ pub const MIGRATION: Migration = Migration {
     sql: "CREATE TABLE clipboard (
         id INTEGER PRIMARY KEY,
         content TEXT,
-        date TEXT,
+        first_copied_date TEXT,
+        last_copied_date TEXT,
         window_title TEXT,
         window_exe TEXT,
         type TEXT,
-        image TEXT
+        image TEXT,
+        html TEXT,
+        count INTEGER
         );
          CREATE VIRTUAL TABLE clipboard_fts USING fts5(
                 content, 
