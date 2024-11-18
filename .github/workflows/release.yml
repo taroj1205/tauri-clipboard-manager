@@ -74,6 +74,13 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Get Version
+        id: get_version
+        shell: pwsh
+        run: |
+          $version = (Get-Content src-tauri/Cargo.toml | Select-String '^version\s*=\s*"([^"]+)"').Matches.Groups[1].Value
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
@@ -81,6 +88,7 @@ jobs:
             src-tauri/target/release/bundle/msi/*.msi
             src-tauri/target/release/bundle/nsis/*.exe
             src-tauri/target/release/Clippr.exe
+          name: Clippr v${{ steps.get_version.outputs.version }}
           body: ${{ steps.get-pr-content.outputs.content }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
