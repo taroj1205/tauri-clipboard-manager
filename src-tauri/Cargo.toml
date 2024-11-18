@@ -1,28 +1,21 @@
 [package]
 name = "Clippr"
-version = "0.1.0"
+version = "1.4.0"
 description = "Advanced clipboard manager built with Tauri"
-authors = ["Shintaro Jokagi"]
+authors = [ "Shintaro Jokagi" ]
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [lib]
-# The `_lib` suffix may seem redundant but it is necessary
-# to make the lib name unique and wouldn't conflict with the bin name.
-# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
 name = "tauri_clipboard_manager_lib"
-crate-type = ["staticlib", "cdylib", "rlib"]
+crate-type = [ "staticlib", "cdylib", "rlib" ]
 
-[build-dependencies]
-tauri-build = { version = "2", features = [] }
+[build-dependencies.tauri-build]
+version = "2"
+features = [ ]
 
 [dependencies]
-tauri = { version = "2", features = [ "macos-private-api", "tray-icon"] }
 tauri-plugin-shell = "2"
-serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-tauri-plugin-sql = { version = "2", features = ["sqlite"] }
 tauri-plugin-clipboard = "2.1.11"
 rusqlite = "0.32.1"
 base64 = "0.22.1"
@@ -34,6 +27,18 @@ dirs = "5.0"
 tauri-plugin-fs = "2"
 window-vibrancy = "0.5.2"
 active-win-pos-rs = "0.8.3"
+
+  [dependencies.tauri]
+  version = "2"
+  features = [ "macos-private-api", "tray-icon" ]
+
+  [dependencies.serde]
+  version = "1"
+  features = [ "derive" ]
+
+  [dependencies.tauri-plugin-sql]
+  version = "2"
+  features = [ "sqlite" ]
 
 [target."cfg(not(any(target_os = \"android\", target_os = \"ios\")))".dependencies]
 tauri-plugin-global-shortcut = "2.0.0"
