@@ -49,19 +49,19 @@ pub async fn save_clipboard_to_db(
     let existing_id: Option<i64> = if type_ == "image" {
         // For images, check the image column
         if let Some(img) = &image {
-            let mut stmt = conn.prepare("SELECT id FROM clipboard WHERE image = ?")
+            let mut stmt = conn
+                .prepare("SELECT id FROM clipboard WHERE image = ?")
                 .map_err(|e| e.to_string())?;
-            stmt.query_row(params![img], |row| row.get(0))
-                .ok()
+            stmt.query_row(params![img], |row| row.get(0)).ok()
         } else {
             None
         }
     } else {
         // For other types, check the content column
-        let mut stmt = conn.prepare("SELECT id FROM clipboard WHERE content = ?")
+        let mut stmt = conn
+            .prepare("SELECT id FROM clipboard WHERE content = ?")
             .map_err(|e| e.to_string())?;
-        stmt.query_row(params![content], |row| row.get(0))
-            .ok()
+        stmt.query_row(params![content], |row| row.get(0)).ok()
     };
 
     println!("Existing ID: {:?}", existing_id);
@@ -70,11 +70,9 @@ pub async fn save_clipboard_to_db(
         // Update existing entry
         conn.execute(
             "UPDATE clipboard SET count = count + 1, last_copied_date = ? WHERE id = ?",
-            params![
-                date,
-                id
-            ],
-        ).map_err(|e| e.to_string())?;
+            params![date, id],
+        )
+        .map_err(|e| e.to_string())?;
         Ok(id)
     } else {
         // Insert new entry

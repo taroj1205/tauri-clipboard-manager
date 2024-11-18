@@ -1,6 +1,6 @@
+use active_win_pos_rs::get_active_window;
 use serde::Serialize;
 use tauri::{LogicalPosition, WebviewWindow};
-use active_win_pos_rs::get_active_window;
 
 #[tauri::command]
 pub fn center_window_on_current_monitor(window: &WebviewWindow) {
@@ -30,9 +30,14 @@ pub struct WindowInfo {
 pub fn get_current_window() -> Option<WindowInfo> {
     get_active_window().ok().map(|window| WindowInfo {
         title: window.title,
-        process_path: window.process_path.file_name().and_then(|n| n.to_str()).unwrap_or("").to_string(),
+        process_path: window
+            .process_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("")
+            .to_string(),
         app_name: window.app_name,
         window_id: window.window_id,
-        process_id: window.process_id
+        process_id: window.process_id,
     })
 }
