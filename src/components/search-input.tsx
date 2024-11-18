@@ -145,9 +145,26 @@ export const SearchInput: Component<SearchInputProps> = (props) => {
                 {(sort) => (
                   <button
                     onClick={() => selectSort(sort.value)}
-                    class="w-full px-3 py-2 text-left text-gray-300 hover:text-white hover:bg-gray-700/50"
+                    class="w-full px-3 py-2 text-left text-gray-300 hover:text-white hover:bg-gray-700/50 flex items-center justify-between"
                   >
-                    {sort.label}
+                    <span class={sort.value === props.selectedSort() ? "text-white" : ""}>
+                      {sort.label}
+                    </span>
+                    {sort.value === props.selectedSort() && (
+                      <svg
+                        class="w-4 h-4 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    )}
                   </button>
                 )}
               </For>
@@ -190,7 +207,7 @@ export const SearchInput: Component<SearchInputProps> = (props) => {
                 {(type) => (
                   <button
                     onClick={() => selectType(type.value)}
-                    class="w-full px-3 py-2 text-left text-gray-300 hover:text-white hover:bg-gray-700/50"
+                    class="w-full px-3 py-2 text-left text-gray-300 hover:text-white hover:bg-gray-700/50 flex items-center justify-between"
                   >
                     <span
                       class={
@@ -201,6 +218,21 @@ export const SearchInput: Component<SearchInputProps> = (props) => {
                     >
                       {type.label}
                     </span>
+                    {props.selectedTypes().includes(type.value) && (
+                      <svg
+                        class="w-4 h-4 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    )}
                   </button>
                 )}
               </For>
