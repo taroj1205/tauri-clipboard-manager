@@ -1,5 +1,11 @@
 # Clippr
 
+## 1.6.0
+
+### Minor Changes
+
+- f98d5bf: Added a sorting feature
+
 ## 1.5.0
 
 ### Minor Changes
