@@ -3,13 +3,12 @@ import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   writeFiles,
-  writeHtml,
   writeImageBase64,
   writeText,
 } from "tauri-plugin-clipboard-api";
 import { invoke } from "@tauri-apps/api/core";
 import type { ClipboardHistory } from "./types/clipboard";
-import { SearchInput } from "./components/search-input";
+import { ClipboardType, SearchInput } from "./components/search-input";
 import { ClipboardPreview } from "./components/clipboard-preview";
 import { EmptyState } from "./components/empty-state";
 import { getRelativeTime } from "./utils/time";
@@ -40,7 +39,7 @@ export const App = ({ db_path }: { db_path: string }) => {
   //   item: null,
   // });
 
-  const [searchTimeout, setSearchTimeout] = createSignal<number>();
+  const [selectedTypes, setSelectedTypes] = createSignal<ClipboardType[]>([]);
 
   // const handleContextMenu = (e: MouseEvent, item: ClipboardHistory) => {
   //   e.preventDefault();
@@ -66,6 +65,9 @@ export const App = ({ db_path }: { db_path: string }) => {
       const list = listRef?.children;
       const totalLength = clipboardHistory().length;
       if (event.key === "ArrowDown") {
+        if (totalLength - 1 < 20 && activeIndex() === totalLength - 1) {
+          return;
+        }
         setActiveIndex((prev) => Math.min(prev + 1, totalLength - 1));
         event.preventDefault();
         list?.[activeIndex()]?.scrollIntoView({
@@ -75,7 +77,7 @@ export const App = ({ db_path }: { db_path: string }) => {
         // Only load more if we have at least 20 items in the current history
         if (activeIndex() >= totalLength - 5) {
           setOffset((prev) => prev + limit);
-          updateHistory(offset(), limit);
+          updateHistory(offset());
         }
       } else if (event.key === "ArrowUp") {
         setActiveIndex((prev) => Math.max(prev - 1, 0));
@@ -95,8 +97,19 @@ export const App = ({ db_path }: { db_path: string }) => {
         handleCopy(item);
         getCurrentWindow().hide();
       } else if (event.key === "Escape") {
-        if (inputRef && inputRef.value.length > 0) {
+        event.preventDefault();
+        console.log(selectedTypes());
+        if (activeIndex() > 0) {
+          setActiveIndex(0);
+          list?.[activeIndex()]?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        } else if (inputRef && inputRef.value.length > 0) {
           inputRef.value = "";
+          updateHistory();
+        } else if (selectedTypes().length > 0) {
+          setSelectedTypes([]);
           updateHistory();
         } else if (activeIndex() > 0) {
           setActiveIndex(0);
@@ -106,6 +119,11 @@ export const App = ({ db_path }: { db_path: string }) => {
         }
       } else if (!event.ctrlKey) {
         inputRef?.focus();
+        setActiveIndex(0);
+        list?.[activeIndex()]?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
       }
     } catch (error) {
       console.error(error);
@@ -117,12 +135,12 @@ export const App = ({ db_path }: { db_path: string }) => {
       const { scrollTop, scrollHeight, clientHeight } = scrollAreaRef;
       if (scrollTop + clientHeight >= scrollHeight) {
         setOffset((prev) => prev + limit);
-        updateHistory(offset(), limit);
+        updateHistory(offset());
       }
     }
   };
 
-  const updateHistory = (offset = 0, limit = 20) => {
+  const updateHistory = (offset = 0) => {
     if (offset !== 0) {
       setIsLoadingMore(true);
     }
@@ -130,7 +148,10 @@ export const App = ({ db_path }: { db_path: string }) => {
       db_path,
       offset,
       limit,
-      filter: { content: inputRef?.value },
+      filter: {
+        content: inputRef?.value,
+        types: selectedTypes(),
+      },
     }).then((history) => {
       if (offset === 0) {
         setClipboardHistory(history);
@@ -160,20 +181,18 @@ export const App = ({ db_path }: { db_path: string }) => {
 
   const handleInput = () => {
     setActiveIndex(0);
-    if (searchTimeout()) window.clearTimeout(searchTimeout());
-    const timeoutId = window.setTimeout(() => {
-      invoke<ClipboardHistory[]>("get_history", {
-        db_path,
-        filter: { content: inputRef?.value },
-      })
-        .then((items) => {
-          setClipboardHistory(items);
-        })
-        .catch(() => {
-          // Handle error if needed
-        });
-    }, 300);
-    setSearchTimeout(timeoutId);
+    updateHistory();
+    // invoke<ClipboardHistory[]>("get_history", {
+    //   db_path,
+    //   filter: {
+    //     content: inputRef?.value,
+    //     types: selectedTypes(),
+    //   },
+    // })
+    //   .then((items) => {
+    //     setClipboardHistory(items);
+    //   })
+    //   .catch(() => {});
   };
 
   // const refreshHistory = () => {
@@ -262,73 +281,72 @@ export const App = ({ db_path }: { db_path: string }) => {
 
   return (
     <main
-      class="w-full text-gray-300 p-2 h-[calc(500px-1rem)] max-h-[calc(500px-1rem)] overflow-hidden"
+      class="w-full text-gray-300 p-2 h-[calc(100svh-1rem)] max-h-[calc(100svh-1rem)] overflow-clip"
       oncontextmenu={(e) => e.preventDefault()}
     >
       <div class="flex flex-col h-full max-w-[800px] mx-auto">
-        <SearchInput ref={inputRef} onInput={handleInput} />
+        <SearchInput
+          ref={inputRef}
+          onInput={handleInput}
+          updateHistory={updateHistory}
+          selectedTypes={selectedTypes}
+          setSelectedTypes={setSelectedTypes}
+        />
         <div class="border-b border-gray-700" />
-        <div class="grid grid-cols-[300px_auto_1fr] h-full">
-          <div
-            ref={scrollAreaRef}
-            onScroll={handleScroll}
-            class="h-full pb-2 overflow-y-auto invisible hover:visible max-h-[calc(100svh-4.5rem)] hover:overflow-y-auto select-none scroll-area"
-          >
-            <ul ref={listRef} class="visible w-full h-full">
-              {clipboardHistory().length === 0 ? (
-                <EmptyState searchQuery={inputRef?.value || ""} />
-              ) : (
-                <>
-                  <For each={clipboardHistory()}>
-                    {(item, index) => {
-                      const currentDate = getRelativeTime(
-                        new Date(item.last_copied_date)
-                      );
-                      const prevDate =
-                        index() > 0
-                          ? getRelativeTime(
-                              new Date(
-                                clipboardHistory()[index() - 1].last_copied_date
-                              )
+        {clipboardHistory().length === 0 ? (
+          <EmptyState searchQuery={inputRef?.value || ""} />
+        ) : (
+          <div class="grid grid-cols-[300px_auto_1fr] h-full">
+            <div
+              ref={scrollAreaRef}
+              onScroll={handleScroll}
+              class="h-full pb-2 overflow-y-auto invisible hover:visible max-h-[calc(100svh-4.5rem)] hover:overflow-y-auto select-none scroll-area"
+            >
+              <ul ref={listRef} class="visible w-full h-full">
+                <For each={clipboardHistory()}>
+                  {(item, index) => {
+                    const currentDate = getRelativeTime(
+                      new Date(item.last_copied_date)
+                    );
+                    const prevDate =
+                      index() > 0
+                        ? getRelativeTime(
+                            new Date(
+                              clipboardHistory()[index() - 1].last_copied_date
                             )
-                          : null;
+                          )
+                        : null;
 
-                      return (
-                        <>
-                          {(index() === 0 || currentDate !== prevDate) && (
-                            <li class="text-gray-400 text-sm p-2">
-                              {currentDate}
-                            </li>
-                          )}
-                          <li class="w-full">
-                            <ClipboardItem
-                              item={item}
-                              isActive={index() === activeIndex()}
-                              index={index()}
-                              searchQuery={inputRef?.value || ""}
-                              onDoubleClick={() => handleCopy(item)}
-                              onClick={() => handleClick(index())}
-                              // onContextMenu={(e) => handleContextMenu(e, item)}
-                            />
+                    return (
+                      <>
+                        {(index() === 0 || currentDate !== prevDate) && (
+                          <li class="text-gray-400 text-sm p-2">
+                            {currentDate}
                           </li>
-                        </>
-                      );
-                    }}
-                  </For>
-                  {isLoadingMore() && (
-                    <For each={Array(5).fill(0)}>{() => <SkeletonItem />}</For>
-                  )}
-                </>
-              )}
-            </ul>
-          </div>
-          {clipboardHistory().length > 0 && (
-            <div class="border-l border-gray-700 h-full" />
-          )}
-          <div
-            class="w-full h-full flex flex-col gap-2 mt-2 px-4 overflow-hidden"
-            // onContextMenu={handleRightPanelContextMenu}
-          >
+                        )}
+                        <li class="w-full">
+                          <ClipboardItem
+                            item={item}
+                            isActive={index() === activeIndex()}
+                            index={index()}
+                            searchQuery={inputRef?.value || ""}
+                            onDoubleClick={() => handleCopy(item)}
+                            onClick={() => handleClick(index())}
+                            // onContextMenu={(e) => handleContextMenu(e, item)}
+                          />
+                        </li>
+                      </>
+                    );
+                  }}
+                </For>
+                {isLoadingMore() && (
+                  <For each={Array(5).fill(0)}>{() => <SkeletonItem />}</For>
+                )}
+              </ul>
+            </div>
+            {clipboardHistory().length > 0 && (
+              <div class="border-l border-gray-700 h-full" />
+            )}
             {clipboardHistory().length > 0 ? (
               <ClipboardPreview
                 item={clipboardHistory()[activeIndex()]}
@@ -337,7 +355,7 @@ export const App = ({ db_path }: { db_path: string }) => {
               />
             ) : null}
           </div>
-        </div>
+        )}
       </div>
     </main>
   );

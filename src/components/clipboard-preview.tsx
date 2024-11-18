@@ -43,7 +43,7 @@ export const ClipboardPreview: Component<ClipboardPreviewProps> = (props) => {
   };
 
   return (
-    <div class="flex flex-col w-full h-full max-h-[calc(100svh-4.5rem)] gap-2 justify-between">
+    <div class="grid grid-rows-[auto_1fr_auto] grid-cols-1 mt-2 px-4 w-full h-full max-h-[calc(100svh-5rem)] gap-2 justify-between">
       <div class="sticky top-0 grid grid-cols-[1fr_auto] place-items-center">
         {props.item?.last_copied_date && (
           <time class="text-gray-400 text-sm text-left w-full">
@@ -51,14 +51,15 @@ export const ClipboardPreview: Component<ClipboardPreviewProps> = (props) => {
             {formatDate(props.item.last_copied_date)})
           </time>
         )}
-        <button class="text-gray-400" onClick={props.onCopy}>
-          <CopyIcon />
-        </button>
+        <p class="text-gray-400 text-sm text-right w-full">
+          {props.item?.type?.charAt(0).toUpperCase() +
+            props.item?.type?.slice(1)}
+        </p>
       </div>
 
       {props?.item?.type === "image" ? (
-        <div class="relative">
-          <div class="overflow-auto  max-h-[390px] scroll-area h-full">
+        <div class="relative h-fit">
+          <div class="overflow-auto max-h-[350px] scroll-area h-full">
             <img
               src={`data:image/png;base64,${props.item.image}`}
               alt="clipboard content"
@@ -70,11 +71,11 @@ export const ClipboardPreview: Component<ClipboardPreviewProps> = (props) => {
           </div>
         </div>
       ) : props?.item?.type === "html" ? (
-        <div class="h-full scroll-area w-full max-h-[390px] overflow-auto">
+        <div class="h-full scroll-area w-full max-h-[350px] overflow-auto">
           <div class="w-fit" innerHTML={props.item?.html} />
         </div>
       ) : props?.item?.type === "files" ? (
-        <div class="h-full scroll-area w-full max-h-[390px] overflow-auto">
+        <div class="h-full scroll-area w-full max-h-[350px] overflow-auto">
           <ul class="list-disc list-inside space-y-1">
             {props.item?.content.split(",").map((file) => (
               <li class="truncate group relative" title={file}>
@@ -84,7 +85,7 @@ export const ClipboardPreview: Component<ClipboardPreviewProps> = (props) => {
           </ul>
         </div>
       ) : props?.item?.type === "color" ? (
-        <div class="h-full scroll-area w-full max-h-[390px] overflow-auto place-items-center grid">
+        <div class="h-full scroll-area w-full max-h-[350px] overflow-auto place-items-center grid">
           <div class="relative w-40 h-40 group">
             <div
               style={{ background: props.item?.content }}
@@ -100,7 +101,7 @@ export const ClipboardPreview: Component<ClipboardPreviewProps> = (props) => {
           <p>{props.item?.content}</p>
         </div>
       ) : (
-        <div class="h-full scroll-area w-full max-h-[390px] overflow-auto whitespace-pre-wrap">
+        <div class="h-full scroll-area w-full max-h-[350px] overflow-auto whitespace-pre-wrap">
           {highlightText(props.item?.content, props.searchQuery)}
         </div>
       )}

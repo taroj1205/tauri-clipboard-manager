@@ -15,7 +15,7 @@
         "title": "Clippr",
         "label": "popup",
         "width": 800,
-        "height": 500,
+        "height": 600,
         "resizable": false,
         "decorations": false,
         "visible": false,

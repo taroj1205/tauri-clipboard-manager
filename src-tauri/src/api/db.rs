@@ -20,7 +20,7 @@ pub struct ClipboardHistory {
 
 #[derive(Deserialize)]
 pub struct FilterOptions {
-    type_: Option<String>,
+    types: Option<Vec<String>>,
     window_title: Option<String>,
     window_exe: Option<String>,
     content: Option<String>,
@@ -127,37 +127,35 @@ pub async fn get_history(
     let conn = Connection::open(db_path).map_err(|e| e.to_string())?;
 
     // Start with a base query that always uses the latest entries
-    let mut query = String::from(
-        "SELECT c.id, c.content, c.first_copied_date, c.last_copied_date, c.window_title, c.window_exe, c.type, c.image, c.html, c.count
-        FROM clipboard c"
-    );
-
+    let mut query = String::from("SELECT c.* FROM clipboard c");
     let mut conditions = Vec::new();
-    let mut param_values = Vec::new(); // Hold owned values
-    let mut params: Vec<&dyn rusqlite::ToSql> = Vec::new();
+    let mut param_values: Vec<String> = Vec::new();
 
     // Add conditions based on filter
     if let Some(f) = &filter {
         // Always join with FTS table if we have any filter
         query.push_str("\nINNER JOIN clipboard_fts ON clipboard_fts.rowid = c.id");
 
-        if let Some(t) = &f.type_ {
-            conditions.push("c.type = ?");
-            param_values.push(t.clone());
+        if let Some(t) = &f.types {
+            if !t.is_empty() {
+                let placeholders = vec!["?"; t.len()].join(",");
+                conditions.push(format!("c.type IN ({})", placeholders));
+                param_values.extend(t.iter().cloned());
+            }
         }
         if let Some(wt) = &f.window_title {
-            conditions.push("clipboard_fts.window_title MATCH ?");
+            conditions.push(String::from("clipboard_fts.window_title MATCH ?"));
             param_values.push(format!("\"{}\"", wt));
         }
         if let Some(we) = &f.window_exe {
-            conditions.push("clipboard_fts.window_exe MATCH ?");
+            conditions.push(String::from("clipboard_fts.window_exe MATCH ?"));
             param_values.push(format!("\"{}\"", we));
         }
         if let Some(content) = &f.content {
             if !content.is_empty() {
-                conditions.push("clipboard_fts.content MATCH ?");
-                // Use proper FTS query syntax for better matching
-                param_values.push(format!("\"{}\"*", content));
+                // Use LIKE for exact substring matching instead of FTS MATCH
+                conditions.push(String::from("c.content LIKE ?"));
+                param_values.push(format!("%{}%", content));
             }
         }
     }
@@ -182,7 +180,10 @@ pub async fn get_history(
     let mut stmt = conn.prepare(&query).map_err(|e| e.to_string())?;
 
     // Create references to parameter values after all values are stored
-    params.extend(param_values.iter().map(|v| v as &dyn rusqlite::ToSql));
+    let params: Vec<&dyn rusqlite::ToSql> = param_values
+        .iter()
+        .map(|v| v as &dyn rusqlite::ToSql)
+        .collect();
 
     let history_iter = stmt
         .query_map(params.as_slice(), |row| {
