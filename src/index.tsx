@@ -11,7 +11,6 @@ import {
   readHtml,
   hasFiles,
   readFiles,
-  onImageUpdate,
 } from "tauri-plugin-clipboard-api";
 import "./styles.css";
 import { App } from "./App";
@@ -19,6 +18,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { appConfigDir } from "@tauri-apps/api/path";
 import { path } from "@tauri-apps/api";
 import { ActiveWindowProps } from "./types/clipboard";
+import "@fontsource/inter";
 
 const main = async () => {
   const app_config_dir = await appConfigDir();
@@ -30,12 +30,6 @@ const main = async () => {
   const [prevText, setPrevText] = createSignal("");
 
   const [isCopyingFromApp, setIsCopyingFromApp] = createSignal(false);
-  createSignal(false);
-
-  onImageUpdate((b64Str) => {
-    console.log(b64Str);
-  });
-
 
   const saveClipboard = async () => {
     // if (isCopyingFromApp()) {
@@ -43,13 +37,21 @@ const main = async () => {
     //   return;
     // }
 
-    
-    const type = await hasFiles() ? "files" : await hasImage() ? "image" : await hasHTML() ? "html" : await hasText() ? "text" : null;
+    const type = (await hasFiles())
+      ? "files"
+      : (await hasImage())
+      ? "image"
+      : (await hasHTML())
+      ? "html"
+      : (await hasText())
+      ? "text"
+      : null;
     console.log(type);
 
-    const window = await invoke("get_current_window") as ActiveWindowProps;
+    const window = (await invoke("get_current_window")) as ActiveWindowProps;
     const windowTitle = window.title;
-    const windowExe = window.process_path.split(/[/\\]/).pop() || window.process_path;
+    const windowExe =
+      window.process_path.split(/[/\\]/).pop() || window.process_path;
 
     if (type === "files") {
       const files = await readFiles();
@@ -80,8 +82,13 @@ const main = async () => {
       if (content !== prevText()) setPrevText(content);
       else return;
       const html = type === "html" ? await readHtml() : "";
-      const isUrl = type === "text" && /^(https?:\/\/|www\.)\S+$/i.test(content);
-      const isColorCode = type === "text" && /^(#[0-9A-Fa-f]{3,8}|rgb\(.*\)|rgba\(.*\)|hsl\(.*\)|hsla\(.*\))$/.test(content.trim());
+      const isUrl =
+        type === "text" && /^(https?:\/\/|www\.)\S+$/i.test(content);
+      const isColorCode =
+        type === "text" &&
+        /^(#[0-9A-Fa-f]{3,8}|rgb\(.*\)|rgba\(.*\)|hsl\(.*\)|hsla\(.*\))$/.test(
+          content.trim()
+        );
       await invoke("save_clipboard_to_db", {
         db_path,
         content,
