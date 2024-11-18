@@ -39,13 +39,40 @@ jobs:
       - name: Build the app
         run: pnpm tauri build
 
-      - name: Get Changelog Entry
-        id: get-changelog
+      - name: Get Latest Release PR Content
+        id: get-pr-content
+        shell: pwsh
         run: |
-          CHANGELOG_CONTENT=$(awk '/^## / {count++} count==1 {print} count>1 {exit}' CHANGELOG.md | sed '1d')
-          echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGELOG_CONTENT" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          try {
+            # Get PR content and explicitly convert the output to string before parsing
+            $prs = (gh pr list --search "author:app/github-actions is:merged" --json number,title,body --limit 1) | Out-String
+            $pr = $prs | ConvertFrom-Json
+            if ($pr) {
+              $prBody = $pr[0].body
+              $lines = $prBody -split '\r?\n'
+              $contentStartIndex = 0
+              foreach ($index in 0..($lines.Count-1)) {
+                if ($lines[$index] -match '### ') {
+                  $contentStartIndex = $index
+                  break
+                }
+              }
+              $releaseNotes = ($lines | Select-Object -Skip $contentStartIndex) -join "`n"
+              $releaseNotes = $releaseNotes -replace '####\s', '### ' -replace '###\s', '## '
+              $releaseNotes = $releaseNotes.Trim()
+              echo "content<<EOF" >> $env:GITHUB_OUTPUT
+              echo $releaseNotes >> $env:GITHUB_OUTPUT
+              echo "EOF" >> $env:GITHUB_OUTPUT
+            } else {
+              echo "No recent changeset PR found"
+              exit 1
+            }
+          } catch {
+            echo "Error processing PR content: $_"
+            exit 1
+          }
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -54,6 +81,6 @@ jobs:
             src-tauri/target/release/bundle/msi/*.msi
             src-tauri/target/release/bundle/nsis/*.exe
             src-tauri/target/release/Clippr.exe
-          body: ${{ steps.get-changelog.outputs.changelog }}
+          body: ${{ steps.get-pr-content.outputs.content }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
