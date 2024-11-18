@@ -23,6 +23,7 @@ export const App = ({ db_path }: { db_path: string }) => {
   );
   const [offset, setOffset] = createSignal(0);
   const limit = 20;
+  const [isLastItem, setIsLastItem] = createSignal(false);
   let inputRef: HTMLInputElement | undefined;
   let listRef: HTMLUListElement | undefined;
   let scrollAreaRef: HTMLDivElement | undefined;
@@ -38,23 +39,35 @@ export const App = ({ db_path }: { db_path: string }) => {
         if (totalLength - 1 < 20 && activeIndex() === totalLength - 1) {
           return;
         }
-        setActiveIndex((prev) => Math.min(prev + 1, totalLength - 1));
         event.preventDefault();
-        list?.[activeIndex()]?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
+        setActiveIndex((prev) => {
+          const newIndex = Math.min(prev + 1, totalLength - 1);
+          // Scroll after state update to ensure correct positioning
+          setTimeout(() => {
+            list?.[newIndex]?.scrollIntoView({
+              behavior: "auto",
+              block: "center",
+            });
+          }, 0);
+          return newIndex;
         });
-        // Only load more if we have at least 20 items in the current history
-        if (activeIndex() >= totalLength - 5) {
+        // Only load more if we have at least 20 items in the current history and haven't reached the last item
+        if (activeIndex() >= totalLength - 5 && !isLastItem()) {
           setOffset((prev) => prev + limit);
           updateHistory(offset());
         }
       } else if (event.key === "ArrowUp") {
-        setActiveIndex((prev) => Math.max(prev - 1, 0));
         event.preventDefault();
-        list?.[activeIndex()]?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
+        setActiveIndex((prev) => {
+          const newIndex = Math.max(prev - 1, 0);
+          // Scroll after state update to ensure correct positioning
+          setTimeout(() => {
+            list?.[newIndex]?.scrollIntoView({
+              behavior: "auto",
+              block: "center",
+            });
+          }, 0);
+          return newIndex;
         });
       } else if (
         event.key === "Enter" ||
@@ -103,7 +116,7 @@ export const App = ({ db_path }: { db_path: string }) => {
   const handleScroll = () => {
     if (scrollAreaRef) {
       const { scrollTop, scrollHeight, clientHeight } = scrollAreaRef;
-      if (scrollTop + clientHeight >= scrollHeight) {
+      if (scrollTop + clientHeight >= scrollHeight && !isLastItem()) {
         setOffset((prev) => prev + limit);
         updateHistory(offset());
       }
@@ -127,6 +140,11 @@ export const App = ({ db_path }: { db_path: string }) => {
         order: "DESC",
       },
     }).then((history) => {
+      if (history.length < limit) {
+        setIsLastItem(true);
+      } else {
+        setIsLastItem(false);
+      }
       if (offset === 0) {
         setClipboardHistory(history);
       } else {
