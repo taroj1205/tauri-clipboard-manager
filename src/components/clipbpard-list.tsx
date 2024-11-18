@@ -42,10 +42,10 @@ export const ClipboardList: Component<ClipboardListProps> = (props) => {
           <>
             <For each={props.items}>
               {(item, index) => {
-                const currentDate = getRelativeTime(new Date(item.date));
+                const currentDate = getRelativeTime(new Date(item.last_copied_date));
                 const prevDate =
                   index() > 0
-                    ? getRelativeTime(new Date(props.items[index() - 1].date))
+                    ? getRelativeTime(new Date(props.items[index() - 1].last_copied_date))
                     : null;
 
                 return (

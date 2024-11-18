@@ -28,7 +28,7 @@ fn toggle_app_window(app: &AppHandle) {
             let _ = window.hide();
         } else {
             let _ = window.show();
-            api::position::center_window_on_current_monitor(&window);
+            api::window::center_window_on_current_monitor(&window);
             let _ = window.set_focus();
         }
     }
@@ -121,7 +121,7 @@ fn main() {
             Ok(())
         })
         .on_window_event(|app, event| {
-            // #[cfg(not(dev))]
+            #[cfg(not(dev))]
             if let tauri::WindowEvent::Focused(false) = event {
                 if let Some(window) = app.get_webview_window("popup") {
                     let _ = window.hide();
@@ -131,11 +131,11 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             message,
             api::image::extract_text_from_base64,
-            api::db::initialize_database,
             api::db::save_clipboard_to_db,
             api::db::update_clipboard_in_db,
             api::db::get_history,
-            api::db::delete_clipboard_from_db
+            api::db::delete_clipboard_from_db,
+            api::window::get_current_window
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
