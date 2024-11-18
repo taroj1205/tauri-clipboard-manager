@@ -4,7 +4,6 @@
 
 ### Minor Changes
 
-- 9f620bd: Added information section and support multiple type display
 - 2a93cb1: Added information section and added multiple type display
 
 ## 1.3.0
