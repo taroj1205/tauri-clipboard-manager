@@ -8,7 +8,7 @@ import {
 } from "tauri-plugin-clipboard-api";
 import { invoke } from "@tauri-apps/api/core";
 import type { ClipboardHistory } from "./types/clipboard";
-import { ClipboardType, SearchInput } from "./components/search-input";
+import { ClipboardType, SearchInput, SortType } from "./components/search-input";
 import { ClipboardPreview } from "./components/clipboard-preview";
 import { EmptyState } from "./components/empty-state";
 import { getRelativeTime } from "./utils/time";
@@ -18,47 +18,17 @@ import { ClipboardItem } from "./components/clipboard-item";
 export const App = ({ db_path }: { db_path: string }) => {
   const [activeIndex, setActiveIndex] = createSignal(0);
   const [isLoadingMore, setIsLoadingMore] = createSignal(false);
-  const [clipboardHistory, setClipboardHistory] = createSignal<
-    ClipboardHistory[]
-  >([]);
+  const [clipboardHistory, setClipboardHistory] = createSignal<ClipboardHistory[]>(
+    []
+  );
   const [offset, setOffset] = createSignal(0);
   const limit = 20;
   let inputRef: HTMLInputElement | undefined;
   let listRef: HTMLUListElement | undefined;
   let scrollAreaRef: HTMLDivElement | undefined;
 
-  // const [contextMenu, setContextMenu] = createSignal<{
-  //   show: boolean;
-  //   x: number;
-  //   y: number;
-  //   item: ClipboardHistory | null;
-  // }>({
-  //   show: false,
-  //   x: 0,
-  //   y: 0,
-  //   item: null,
-  // });
-
   const [selectedTypes, setSelectedTypes] = createSignal<ClipboardType[]>([]);
-
-  // const handleContextMenu = (e: MouseEvent, item: ClipboardHistory) => {
-  //   e.preventDefault();
-  //   setContextMenu({
-  //     show: true,
-  //     x: e.clientX,
-  //     y: e.clientY,
-  //     item,
-  //   });
-  // };
-
-  // const closeContextMenu = () => {
-  //   setContextMenu({
-  //     show: false,
-  //     x: 0,
-  //     y: 0,
-  //     item: null,
-  //   });
-  // };
+  const [selectedSort, setSelectedSort] = createSignal<SortType>("recent");
 
   const handleKeyDown = (event: KeyboardEvent) => {
     try {
@@ -152,6 +122,10 @@ export const App = ({ db_path }: { db_path: string }) => {
         content: inputRef?.value,
         types: selectedTypes(),
       },
+      sort: {
+        column: selectedSort() === "recent" ? "last_copied_date" : "count",
+        order: "DESC",
+      },
     }).then((history) => {
       if (offset === 0) {
         setClipboardHistory(history);
@@ -174,37 +148,10 @@ export const App = ({ db_path }: { db_path: string }) => {
     getCurrentWindow().hide();
   };
 
-  // const handleDelete = async (item: ClipboardHistory) => {
-  //   await invoke<void>("delete_clipboard_from_db", { db_path, id: item.id });
-  //   refreshHistory();
-  // };
-
   const handleInput = () => {
     setActiveIndex(0);
     updateHistory();
-    // invoke<ClipboardHistory[]>("get_history", {
-    //   db_path,
-    //   filter: {
-    //     content: inputRef?.value,
-    //     types: selectedTypes(),
-    //   },
-    // })
-    //   .then((items) => {
-    //     setClipboardHistory(items);
-    //   })
-    //   .catch(() => {});
   };
-
-  // const refreshHistory = () => {
-  //   setOffset(0);
-  //   setIsInitialLoading(true);
-  //   invoke<ClipboardHistory[]>("get_history", {
-  //     db_path,
-  //   }).then((history) => {
-  //     setClipboardHistory(history);
-  //     setIsInitialLoading(false);
-  //   });
-  // };
 
   updateHistory();
 
@@ -256,27 +203,12 @@ export const App = ({ db_path }: { db_path: string }) => {
     setActiveIndex(index);
   };
 
-  // const handleRightPanelContextMenu = (e: MouseEvent) => {
-  //   e.preventDefault();
-  //   const item = clipboardHistory()[activeIndex()];
-  //   if (item) {
-  //     setContextMenu({
-  //       show: true,
-  //       x: e.clientX,
-  //       y: e.clientY,
-  //       item,
-  //     });
-  //   }
-  // };
-
   onMount(() => {
     window.addEventListener("keydown", handleKeyDown);
-    // window.addEventListener("click", closeContextMenu);
   });
 
   onCleanup(() => {
     window.removeEventListener("keydown", handleKeyDown);
-    // window.removeEventListener("click", closeContextMenu);
   });
 
   return (
@@ -291,6 +223,8 @@ export const App = ({ db_path }: { db_path: string }) => {
           updateHistory={updateHistory}
           selectedTypes={selectedTypes}
           setSelectedTypes={setSelectedTypes}
+          selectedSort={selectedSort}
+          setSelectedSort={setSelectedSort}
         />
         <div class="border-b border-gray-700" />
         {clipboardHistory().length === 0 ? (
@@ -332,7 +266,6 @@ export const App = ({ db_path }: { db_path: string }) => {
                             searchQuery={inputRef?.value || ""}
                             onDoubleClick={() => handleCopy(item)}
                             onClick={() => handleClick(index())}
-                            // onContextMenu={(e) => handleContextMenu(e, item)}
                           />
                         </li>
                       </>
