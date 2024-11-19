@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.3
+
+### Patch Changes
+
+- [#68](https://github.com/taroj1205/tauri-clipboard-manager/pull/68) [`d275bbf`](https://github.com/taroj1205/tauri-clipboard-manager/commit/d275bbfaad1a95619a5561ab1e259c684fda60af) Thanks [@taroj1205](https://github.com/taroj1205)! - Fixed the content not selectable.
+
+- [#63](https://github.com/taroj1205/tauri-clipboard-manager/pull/63) [`834bd97`](https://github.com/taroj1205/tauri-clipboard-manager/commit/834bd97f6b49c86096c858042a7874d7cd928c69) Thanks [@taroj1205](https://github.com/taroj1205)! - Fix not being able to copy text to clipboard.
+
 ## Latest Release
 
 ### November 18, 2024: [v1.6.2](/.changelog/1.6.2.mdx)
