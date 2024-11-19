@@ -1,6 +1,6 @@
 [package]
 name = "Clippr"
-version = "1.6.2"
+version = "1.6.3"
 description = "Advanced clipboard manager built with Tauri"
 authors = [ "Shintaro Jokagi" ]
 edition = "2021"
