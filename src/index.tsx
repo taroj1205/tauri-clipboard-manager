@@ -1,6 +1,6 @@
 import { render } from "solid-js/web";
 import { createSignal } from "solid-js";
-import { emit, listen } from "@tauri-apps/api/event";
+import { emit } from "@tauri-apps/api/event";
 import {
   hasImage,
   hasText,
