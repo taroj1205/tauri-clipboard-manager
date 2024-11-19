@@ -38,7 +38,7 @@ jobs:
       - name: Check for changesets
         id: check-changesets
         run: |
-          if [ -n "$(find .changeset -name '*.md' -not -name 'README.md')" ]; then
+          if [ -n "$(find .changeset -name '*.md' -not -name 'README.md')" ] || [ -n "$(find .changelog -name '*.mdx' -newer CHANGELOG.md)" ]; then
             echo "has_changesets=true" >> $GITHUB_OUTPUT
           else
             echo "has_changesets=false" >> $GITHUB_OUTPUT

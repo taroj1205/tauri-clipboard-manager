@@ -1,119 +1,37 @@
-# Clippr
+# Changelog
 
-## 1.6.2
+## Latest Release
 
-### Patch Changes
+### November 18, 2024: [v1.6.2](/.changelog/1.6.2.mdx)
 
-- cc68107: Disabled tab index and removed focus outlines globally to improve visual cleanliness
-- 8365641: Fix scroll always trying to fetch even if last item
+## Previous Releases
 
-## 1.6.1
+### November 18, 2024: [v1.6.1](/.changelog/1.6.1.mdx)
 
-### Patch Changes
+### November 18, 2024: [v1.6.0](/.changelog/1.6.0.mdx)
 
-- cd7525a: Fixed how check icon was not shown in dropdown
+### November 16, 2024: [v1.5.0](/.changelog/1.5.0.mdx)
 
-## 1.6.0
+### November 16, 2024: [v1.4.0](/.changelog/1.4.0.mdx)
 
-### Minor Changes
+### November 16, 2024: [v1.3.0](/.changelog/1.3.0.mdx)
 
-- f98d5bf: Added a sorting feature
+### November 16, 2024: [v1.2.1](/.changelog/1.2.1.mdx)
 
-## 1.5.0
+### November 16, 2024: [v1.2.0](/.changelog/1.2.0.mdx)
 
-### Minor Changes
+### November 16, 2024: [v1.1.0](/.changelog/1.1.0.mdx)
 
-- 6dfdb12: Add dropdown menu for advance filtering
+### November 15, 2024: [v1.0.3](/.changelog/1.0.3.mdx)
 
-  - Image, Text, Files, and Color
-  - Reset filter when pressing [Escape]
+### November 15, 2024: [v1.0.2](/.changelog/1.0.2.mdx)
 
-  Made the window slightly larger.
+### November 15, 2024: [v1.0.1](/.changelog/1.0.1.mdx)
 
-## 1.4.0
+### November 15, 2024: [v1.0.0](/.changelog/1.0.0.mdx)
 
-### Minor Changes
+### November 15, 2024: [v0.1.2](/.changelog/0.1.2.mdx)
 
-- 2a93cb1: Added information section and added multiple type display
+### November 15, 2024: [v0.1.1](/.changelog/0.1.1.mdx)
 
-## 1.3.0
-
-### Minor Changes
-
-- 90e928d: Add support for HTML and ignore file copies
-
-## 1.2.1
-
-### Patch Changes
-
-- 3db2d0d: Disable default context menu and reset active index on close
-
-## 1.2.0
-
-### Minor Changes
-
-- 367ecca: Add position module and improve position management
-
-## 1.1.0
-
-### Minor Changes
-
-- a4ecf61: Removed context menu because there is only one function
-
-## 1.0.3
-
-### Patch Changes
-
-- 1c58df7: Remove delete button from context menu to simplify the UI and focus on core clipboard functionality.
-
-## 1.0.2
-
-### Patch Changes
-
-- d36cebb: Formatted frontend code and made minor bug fixes.
-
-## 1.0.1
-
-### Patch Changes
-
-- 4ab5ca9: - Fixed active index handling in clipboard list with improved keyboard navigation
-  - Enhanced clipboard preview with better image and text display
-  - Added context menu for copy and delete actions
-  - Improved search functionality with debounced input
-  - Added infinite scrolling with loading states
-  - Updated UI components with better accessibility and user experience
-  - Fixed window focus and clipboard event handling
-
-## 1.0.0
-
-## Major Changes
-
-- 18a3f94: 🎉 Official 1.0.0 Release
-
-### Features:
-
-- Clipboard history management
-  - Text content support
-  - Image content support with preview
-  - Rich text support
-- System tray integration for quick access
-- Global hotkey support for seamless workflow
-- Powerful search functionality
-  - Full-text search for text content
-  - Image search with visual previews
-  - Real-time search results
-- Modern UI with dark mode support
-- Persistent storage for clipboard history
-
-## 0.1.2
-
-### Patch Changes
-
-- b8b2962: Configure release workflow for Windows-only builds
-- 8eeb5e9: Configure CI and release workflows for Windows-only builds
-
-## 0.1.1
-
-### Patch Changes
-
-- 20a4e8a: Fixed the bug where search filter did not work
+For detailed changelogs of each version, please check the `.changelog` directory.
