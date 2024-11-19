@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.3
+
+### Patch Changes
+
+- 834bd97: Fix not being able to copy text to clipboard.
+
 ## Latest Release
 
 ### November 18, 2024: [v1.6.2](/.changelog/1.6.2.mdx)
