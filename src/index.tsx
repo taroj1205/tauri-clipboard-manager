@@ -29,8 +29,6 @@ const main = async () => {
   const [prevImage, setPrevImage] = createSignal("");
   const [prevText, setPrevText] = createSignal("");
 
-  const [isCopyingFromApp, setIsCopyingFromApp] = createSignal(false);
-
   const saveClipboard = async () => {
     // if (isCopyingFromApp()) {
     //   setIsCopyingFromApp(false);
@@ -103,10 +101,6 @@ const main = async () => {
 
   if (root) {
     render(() => {
-      listen("copy-from-app", () => {
-        setIsCopyingFromApp(true);
-      });
-
       onClipboardUpdate(async () => {
         await saveClipboard();
         emit("clipboard_saved");
