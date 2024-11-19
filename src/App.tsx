@@ -155,7 +155,6 @@ export const App = ({ db_path }: { db_path: string }) => {
   };
 
   const handleCopy = async (item: ClipboardHistory) => {
-    emit("copy-from-app");
     if (item.type === "image") {
       writeImageBase64(item.image);
     } else if (item.type === "files") {
