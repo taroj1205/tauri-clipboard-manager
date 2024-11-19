@@ -2,4 +2,4 @@
 "clippr": patch
 ---
 
-Fix copy function not copying
+Fix not being able to copy text to clipboard.
