@@ -62,13 +62,27 @@ jobs:
         run: |
           PR_NUMBER="${{ steps.changeset-action.outputs.pullRequestNumber }}"
           if [ -n "$PR_NUMBER" ]; then
-            # Read the latest changes from CHANGELOG.md
-            CHANGELOG_CONTENT=$(awk '/^## / {count++} count==1 {print} count>1 {exit}' CHANGELOG.md | sed '1d')
+            # Get the latest version from package.json
+            VERSION=$(node -p "require('./package.json').version")
+            
+            # Create .changelog directory if it doesn't exist
+            mkdir -p .changelog
+            
+            # Copy the latest changes to version-specific MDX file
+            LATEST_CHANGES=$(awk '/^## / {count++} count==1 {print} count>1 {exit}' CHANGELOG.md | sed '1d')
+            echo "---
+            title: Version $VERSION
+            date: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+            ---
 
+            $LATEST_CHANGES" > ".changelog/$VERSION.mdx"
+            
+            # Update PR description with changelog content
             gh pr edit $PR_NUMBER --body "This PR was automatically created by the Version PR workflow to update versions and changelogs.
 
-            $CHANGELOG_CONTENT"
+            Changes in this version:
+            
+            $LATEST_CHANGES"
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
