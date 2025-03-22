@@ -38,6 +38,7 @@ fn main() {
     let migrations = vec![MIGRATION];
 
     let mut builder = tauri::Builder::default()
+        .plugin(tauri_plugin_autostart::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(
             tauri_plugin_sql::Builder::default()
@@ -88,15 +89,38 @@ fn main() {
             apply_mica(&window, Some(true))
                 .expect("Unsupported platform! 'apply_mica' is only supported on Windows 11");
 
+            let app_handle = Arc::new(Mutex::new(app.handle().clone()));
+            let autostart_i =
+                MenuItem::with_id(app, "autostart", "Enable Autostart", true, None::<&str>)?;
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&quit_i])?;
+            let menu = Menu::with_items(app, &[&autostart_i, &quit_i])?;
 
             let _tray = TrayIconBuilder::new()
-                .on_menu_event(|app, event| match event.id.as_ref() {
-                    "quit" => {
-                        app.exit(0);
+                .on_menu_event(move |menu_app, event| {
+                    let app_handle = app_handle.lock().unwrap();
+                    match event.id.as_ref() {
+                        "quit" => {
+                            menu_app.exit(0);
+                        }
+                        "autostart" => {
+                            use tauri_plugin_autostart::ManagerExt;
+                            let autostart_manager = app_handle.autolaunch();
+                            match autostart_manager.is_enabled() {
+                                Ok(true) => {
+                                    let _ = autostart_manager.disable();
+                                    let _ = autostart_i.set_text("Enable Autostart");
+                                }
+                                Ok(false) => {
+                                    let _ = autostart_manager.enable();
+                                    let _ = autostart_i.set_text("Disable Autostart");
+                                }
+                                Err(e) => {
+                                    eprintln!("Error checking autostart status: {:?}", e);
+                                }
+                            }
+                        }
+                        _ => {}
                     }
-                    _ => {}
                 })
                 .on_tray_icon_event(|tray, event| match event {
                     TrayIconEvent::Click {
@@ -114,7 +138,7 @@ fn main() {
                     _ => {}
                 })
                 .menu(&menu)
-                .menu_on_left_click(true)
+                .show_menu_on_left_click(true)
                 .icon(app.default_window_icon().unwrap().clone())
                 .build(app)?;
 
