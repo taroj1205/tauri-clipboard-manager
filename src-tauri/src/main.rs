@@ -1,6 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use std::sync::{Arc, Mutex};
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
@@ -38,7 +39,6 @@ fn main() {
     let migrations = vec![MIGRATION];
 
     let mut builder = tauri::Builder::default()
-        .plugin(tauri_plugin_autostart::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(
             tauri_plugin_sql::Builder::default()
@@ -64,6 +64,13 @@ fn main() {
                 use tauri_plugin_global_shortcut::{Code, Modifiers, ShortcutState};
 
                 let _ = api::clipboard::start_monitor(app.handle().clone());
+
+                use tauri_plugin_autostart::MacosLauncher;
+
+                let _ = app.handle().plugin(tauri_plugin_autostart::init(
+                    MacosLauncher::LaunchAgent,
+                    Some(vec![]),
+                ));
 
                 app.handle().plugin(
                     tauri_plugin_global_shortcut::Builder::new()
@@ -138,7 +145,7 @@ fn main() {
                     _ => {}
                 })
                 .menu(&menu)
-                .show_menu_on_left_click(true)
+                .menu_on_left_click(true)
                 .icon(app.default_window_icon().unwrap().clone())
                 .build(app)?;
 
