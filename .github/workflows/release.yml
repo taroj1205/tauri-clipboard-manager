@@ -36,48 +36,24 @@ jobs:
           npm install -g pnpm
           pnpm install
 
-      - name: Get Version from Changelog
-        id: get_version
-        run: |
-          VERSION=$(head -n 1 CHANGELOG.md | sed -E 's/^#+\s*v?([0-9.]+).*$/\1/')
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Generate Release Notes
-        id: generate_release_notes
-        run: |
-          # Extract the changelog content for the latest version
-          START=$(grep -n "^## v${VERSION}" CHANGELOG.md | cut -d: -f1)
-          END=$(grep -n "^## v" CHANGELOG.md | grep -v "^## v${VERSION}" | head -n 1 | cut -d: -f1)
-
-          if [ -z "$END" ]; then
-            # If it's the first version, read to the end of the file
-            END=$(wc -l < CHANGELOG.md)
-          fi
-
-          START=$((START + 1)) # Skip the version header
-          RELEASE_NOTES=$(sed -n "${START},$(($END - 1))p" CHANGELOG.md)
-
-          echo "release_notes<<EOF" >> $GITHUB_OUTPUT
-          echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-        shell: bash
-
       - name: Build the app
         run: pnpm tauri build
+
+      - name: Get Version
+        id: get_version
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
       - name: Rename Clippr.exe
         if: matrix.platform == 'windows-latest'
         run: |
-          mv src-tauri/target/release/Clippr.exe "src-tauri/target/release/Clippr_${{ env.VERSION }}.exe"
+          mv src-tauri/target/release/Clippr.exe "src-tauri/target/release/Clippr_${{ steps.get_version.outputs.VERSION }}.exe"
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          body: ${{ steps.generate_release_notes.outputs.release_notes }}
           files: |
             src-tauri/target/release/bundle/msi/*.msi
             src-tauri/target/release/bundle/nsis/*.exe
-            src-tauri/target/release/Clippr_${{ env.VERSION }}.exe
+            src-tauri/target/release/Clippr_${{ steps.get_version.outputs.VERSION }}.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
