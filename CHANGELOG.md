@@ -1,5 +1,11 @@
 # Clippr
 
+## 1.6.4
+
+### Patch Changes
+
+- [#77](https://github.com/taroj1205/tauri-clipboard-manager/pull/77) [`ea64d25`](https://github.com/taroj1205/tauri-clipboard-manager/commit/ea64d25bb2f7d549fc676d5e7ba601b789196199) Thanks [@taroj1205](https://github.com/taroj1205)! - Improve overall performance when searching using debounce.
+
 ## 1.6.3
 
 ### Patch Changes
