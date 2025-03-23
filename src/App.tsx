@@ -123,7 +123,17 @@ export const App = ({ db_path }: { db_path: string }) => {
     }
   };
 
-  const updateHistory = (offset = 0) => {
+  // Add debounce utility
+  const debounce = (fn: Function, ms = 300) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    return function (this: any, ...args: any[]) {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => fn.apply(this, args), ms);
+    };
+  };
+
+  // Optimize updateHistory with debounce
+  const updateHistory = debounce((offset = 0) => {
     if (offset !== 0) {
       setIsLoadingMore(true);
     }
@@ -152,7 +162,33 @@ export const App = ({ db_path }: { db_path: string }) => {
         setIsLoadingMore(false);
       }
     });
-  };
+  }, 150);
+
+  // Optimize clipboard_saved listener
+  listen("clipboard_saved", async () => {
+    try {
+      const newHistory = await invoke<ClipboardHistory[]>("get_history", {
+        db_path,
+        offset: 0,
+        limit: 1, // Only fetch the latest item
+      });
+
+      if (newHistory.length > 0) {
+        setClipboardHistory((prev) => {
+          const existing = prev.find(item => 
+            item.content === newHistory[0].content && 
+            item.type === newHistory[0].type
+          );
+          if (!existing) {
+            return [newHistory[0], ...prev];
+          }
+          return prev;
+        });
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  });
 
   const handleCopy = async (item: ClipboardHistory) => {
     if (item.type === "image") {

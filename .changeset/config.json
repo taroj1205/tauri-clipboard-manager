@@ -1,6 +1,9 @@
 {
   "$schema": "https://unpkg.com/@changesets/config@3.0.3/schema.json",
-  "changelog": ["@changesets/changelog-github", { "repo": "taroj1205/tauri-clipboard-manager" }],
+  "changelog": [
+    "@changesets/changelog-github",
+    { "repo": "taroj1205/tauri-clipboard-manager" }
+  ],
   "commit": false,
   "fixed": [],
   "linked": [],
