@@ -39,11 +39,14 @@ jobs:
       - name: Build the app
         run: pnpm tauri build
 
+      - name: Get Version
+        id: get_version
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
       - name: Rename Clippr.exe
         if: matrix.platform == 'windows-latest'
         run: |
-          VERSION=$(node -p "require('./package.json').version")
-          mv src-tauri/target/release/Clippr.exe "src-tauri/target/release/Clippr_${VERSION}.exe"
+          mv src-tauri/target/release/Clippr.exe "src-tauri/target/release/Clippr_${{ steps.get_version.outputs.VERSION }}.exe"
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -51,6 +54,6 @@ jobs:
           files: |
             src-tauri/target/release/bundle/msi/*.msi
             src-tauri/target/release/bundle/nsis/*.exe
-            src-tauri/target/release/Clippr_${{ steps.release-notes.outputs.version }}.exe
+            src-tauri/target/release/Clippr_${{ steps.get_version.outputs.VERSION }}.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
