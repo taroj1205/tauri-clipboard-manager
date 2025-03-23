@@ -42,7 +42,8 @@ jobs:
       - name: Rename Clippr.exe
         if: matrix.platform == 'windows-latest'
         run: |
-          mv src-tauri/target/release/Clippr.exe "src-tauri/target/release/Clippr_${{ steps.release-notes.outputs.version }}.exe"
+          VERSION=$(node -p "require('./package.json').version")
+          mv src-tauri/target/release/Clippr.exe "src-tauri/target/release/Clippr_${VERSION}.exe"
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
